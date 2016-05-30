@@ -1,0 +1,28 @@
+{
+  "name": "restify-utils",
+  "version": "0.0.1",
+  "description": "Utility functions for restify, including framework-style ones",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamuelMarks/restify-utils.git"
+  },
+  "author": "Samuel Marks <samuelmarks@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SamuelMarks/restify-utils/issues"
+  },
+  "homepage": "https://github.com/SamuelMarks/restify-utils#readme",
+  "dependencies": {
+    "async": "^2.0.0-rc.5",
+    "bunyan": "^1.8.1",
+    "nodejs-utils": "https://api.github.com/repos/SamuelMarks/nodejs-utils-dist/tarball",
+    "redis": "^2.6.0-2",
+    "restify": "^4.1.0",
+    "restify-errors": "https://api.github.com/repos/SamuelMarks/restify-errors-dist/tarball",
+    "waterline": "^0.12.1"
+  }
+}
