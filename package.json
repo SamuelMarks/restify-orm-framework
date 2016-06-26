@@ -1,6 +1,6 @@
 {
   "name": "restify-utils",
-  "version": "0.0.1",
+  "version": "0.0.2-alpha",
   "description": "Utility functions for restify, including framework-style ones",
   "main": "index.js",
   "scripts": {
