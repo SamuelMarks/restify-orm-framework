@@ -11,6 +11,6 @@ Otherwise just use the [restify-utils-dist](https://github.com/SamuelMarks/resti
 
 ## Miscellaneous
 
-Clone the dist repo in the same directory this repo was cloned into, then you can synchronise them with:
+Clone [restify-utils-dist](https://github.com/SamuelMarks/restify-utils-dist) one dir above where this repo was cloned, then synchronise with:
 
     find -type f -not -name "*.ts" -and -not -path "./.git/*" -and -not -path "./node-modules/*" -and -not -name '*.map' | cpio -pdamv ../restify-utils-dist

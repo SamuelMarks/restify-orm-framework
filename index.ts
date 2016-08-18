@@ -68,6 +68,13 @@ export function strapFramework(kwargs: IStrapFramework) {
                 )
             );
 
+        if (kwargs.models_and_routes[entity].route)
+            Object.keys(kwargs.models_and_routes[entity].route).map(
+                route => kwargs.models_and_routes[entity].route[route](
+                    app, `${kwargs.root}/${entity}`
+                )
+            );
+
         // Merge models
         if (!kwargs.skip_db && kwargs.models_and_routes[entity].models)
             Object.keys(kwargs.models_and_routes[entity].models).map(tryTblInit(entity));
