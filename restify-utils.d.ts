@@ -9,7 +9,8 @@ declare var restify_utils: restify_utils.restify_utils;
 
 declare module restify_utils {
     export interface restify_utils {
-        strapFramework(kwargs: IStrapFramework)
+        strapFramework(kwargs: IStrapFramework);
+        add_to_body_mw(...updates: Array<[string, string]>): restify.RequestHandler;
     }
 
     export interface IStrapFramework {

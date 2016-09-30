@@ -13,7 +13,7 @@ export function strapFramework(kwargs: IStrapFramework) {
     if (kwargs.start_app === undefined) kwargs.start_app = true;
     if (kwargs.skip_db === undefined) kwargs.skip_db = true;
     if (kwargs.use_redis === undefined) kwargs.use_redis = false;
-    if (kwargs.createSampleData === undefined) kwargs.createSampleData = !process.env.NO_SAMPLE_DATA;
+    if (kwargs.createSampleData === undefined) kwargs.createSampleData = !process.env['NO_SAMPLE_DATA'];
 
     // Init server obj
     const app = restify.createServer({name: kwargs.app_name});
@@ -37,7 +37,7 @@ export function strapFramework(kwargs: IStrapFramework) {
     ['/', '/version', '/api', '/api/version'].map(route_path => app.get(route_path,
         (req: restify.Request, res: restify.Response, next: restify.Next) => {
             res.json({version: kwargs.package_.version});
-            next()
+            return next();
         }
     ));
 
@@ -81,7 +81,7 @@ export function strapFramework(kwargs: IStrapFramework) {
     });
 
     if (kwargs.use_redis) {
-        kwargs.redis_cursors.redis = createClient(process.env.REDIS_URL);
+        kwargs.redis_cursors.redis = createClient(process.env['REDIS_URL']);
         kwargs.redis_cursors.redis.on('error', err => {
             kwargs.logger.error(`Redis::error event -
             ${kwargs.redis_cursors.redis['host']}:${kwargs.redis_cursors.redis['port']}s- ${err}`);
@@ -91,7 +91,7 @@ export function strapFramework(kwargs: IStrapFramework) {
 
     if (kwargs.skip_db)
         if (kwargs.start_app)
-            app.listen(process.env.PORT || 3000, () => {
+            app.listen(process.env['PORT'] || 3000, () => {
                 kwargs.logger.info('%s listening at %s', app.name, app.url);
 
                 return kwargs.callback ? kwargs.callback(null, app, Object.freeze([]), Object.freeze([])) : null;
@@ -113,7 +113,7 @@ export function strapFramework(kwargs: IStrapFramework) {
         kwargs._cache['collections'] = kwargs.collections; // pass by reference
 
         if (kwargs.start_app) // Start API server
-            app.listen(process.env.PORT || 3000, () => {
+            app.listen(process.env['PORT'] || 3000, () => {
                 kwargs.logger.info('%s listening at %s', app.name, app.url);
 
                 if (kwargs.createSampleData && kwargs.sampleDataToCreate)
@@ -127,4 +127,11 @@ export function strapFramework(kwargs: IStrapFramework) {
         else if (kwargs.callback)
             return kwargs.callback(null, app, ontology.connections, kwargs.collections); // E.g.: for testing
     });
+}
+
+export function add_to_body_mw(...updates: Array<[string, string]>): restify.RequestHandler {
+    return function (req: restify.Request, res: restify.Response, next: restify.Next) {
+        req.body && updates.map(pair => req.body[pair[0]] = updates[pair[1]]);
+        return next();
+    }
 }

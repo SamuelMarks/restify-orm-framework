@@ -2,9 +2,9 @@
   "globalDependencies": {
     "async": "registry:dt/async#2.0.1+20160804113311",
     "bunyan": "registry:dt/bunyan#0.0.0+20160412155112",
-    "node": "registry:env/node#6.0.0+20160813135048",
-    "redis": "registry:dt/redis#0.12.1+20160728132028",
-    "restify": "registry:dt/restify#2.0.0+20160726153409"
+    "node": "registry:env/node#6.0.0+20160918225031",
+    "redis": "registry:dt/redis#0.12.1+20160818110030",
+    "restify": "registry:dt/restify#2.0.0+20160928142801"
   },
   "dependencies": {
     "nodejs-utils": "github:SamuelMarks/nodejs-utils/nodejs-utils.d.ts",
