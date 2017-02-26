@@ -1,6 +1,6 @@
 import * as restify from 'restify';
 import {IModelRoute} from 'nodejs-utils';
-import {Logger} from 'bunyan';
+import * as bunyan from 'bunyan';
 import * as Waterline from 'waterline';
 import {ConfigOptions, WLError} from 'waterline';
 import {RedisClient} from 'redis';
@@ -16,7 +16,7 @@ declare module restify_utils {
     export interface IStrapFramework {
         app_name: string;
         models_and_routes: IModelRoute;
-        logger: Logger;
+        logger: bunyan;
         _cache: {};
         package_: {version: number};
         root?: string;

@@ -1,13 +1,13 @@
 {
   "name": "restify-utils",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Utility functions for restify, including framework-style ones",
   "main": "index.js",
   "dependencies": {
-    "async": "^2.0.1",
-    "bunyan": "^1.8.1",
-    "redis": "^2.6.2",
-    "restify": "^4.1.1",
+    "async": "^2.1.5",
+    "bunyan": "^1.8.5",
+    "redis": "^2.6.5",
+    "restify": "^4.3.0",
     "waterline": "^0.12.2"
   },
   "devDependencies": {},
