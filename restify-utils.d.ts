@@ -5,7 +5,7 @@ import * as Waterline from 'waterline';
 import {ConfigOptions, WLError} from 'waterline';
 import {RedisClient} from 'redis';
 
-declare var restify_utils: restify_utils.restify_utils;
+declare const restify_utils: restify_utils.restify_utils;
 
 declare module restify_utils {
     export interface restify_utils {
@@ -31,7 +31,7 @@ declare module restify_utils {
         SampleData?: any; //ISampleData,
         sampleDataToCreate?: (SampleData: any/*ISampleData*/) => Array<any>;
         //^ <T>(tasks: AsyncFunction<T>[], callback?: AsyncResultArrayCallback<T>) => void,
-        callback?: (err: Error|WLError, app?: restify.Server, connections?: any[], collections?: Waterline.Query[]) => void;
+        callback?: (err: Error|WLError, app?: restify.Server, connections?: Waterline.Connection[], collections?: Waterline.Query[]) => void;
     }
 
     export interface ISampleData {

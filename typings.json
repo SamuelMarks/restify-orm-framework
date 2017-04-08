@@ -1,13 +1,6 @@
 {
-  "globalDependencies": {
-    "async": "registry:dt/async#2.0.1+20170118182309",
-    "node": "registry:env/node#6.0.0+20170213133316"
-  },
   "dependencies": {
-    "bunyan": "registry:dt/bunyan#0.0.0+20170113153526",
     "nodejs-utils": "github:SamuelMarks/nodejs-utils/nodejs-utils.d.ts",
-    "redis": "registry:dt/redis#0.12.2+20170209165924",
-    "restify": "registry:dt/restify#2.0.0+20170223084135",
     "restify-errors": "github:SamuelMarks/restify-errors/restify-errors.d.ts",
     "restify-utils": "github:SamuelMarks/restify-utils/restify-utils.d.ts",
     "waterline": "github:SamuelMarks/cust_typings/waterline/waterline.d.ts"

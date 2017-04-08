@@ -1,16 +1,22 @@
 {
   "name": "restify-utils",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Utility functions for restify, including framework-style ones",
   "main": "index.js",
   "dependencies": {
-    "async": "^2.1.5",
-    "bunyan": "^1.8.5",
-    "redis": "^2.6.5",
+    "async": "^2.3.0",
+    "bunyan": "^1.8.10",
+    "redis": "^2.7.1",
     "restify": "^4.3.0",
     "waterline": "^0.12.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/async": "^2.0.40",
+    "@types/bunyan": "0.0.36",
+    "@types/node": "^7.0.12",
+    "@types/redis": "^0.12.36",
+    "@types/restify": "^2.0.42"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

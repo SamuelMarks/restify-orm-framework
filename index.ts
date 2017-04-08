@@ -1,11 +1,11 @@
 import * as restify from 'restify';
 import * as Waterline from 'waterline';
-import {WLError, waterline, Collection} from 'waterline';
+import { Collection, waterline, WLError } from 'waterline';
 import * as async from 'async';
-import {createLogger} from 'bunyan';
-import {WaterlineError} from 'restify-errors';
-import {createClient} from 'redis';
-import {IStrapFramework} from 'restify-utils';
+import { createLogger } from 'bunyan';
+import { WaterlineError } from 'restify-errors';
+import { createClient } from 'redis';
+import { IStrapFramework } from 'restify-utils';
 
 export function strapFramework(kwargs: IStrapFramework) {
     if (kwargs.root === undefined) kwargs.root = '/api';
@@ -94,10 +94,12 @@ export function strapFramework(kwargs: IStrapFramework) {
             app.listen(process.env['PORT'] || 3000, () => {
                 kwargs.logger.info('%s listening at %s', app.name, app.url);
 
-                return kwargs.callback ? kwargs.callback(null, app, Object.freeze([]), Object.freeze([])) : null;
+                return kwargs.callback ?
+                    kwargs.callback(null, app, <any[]>Object.freeze([]), <any[]>Object.freeze([]))
+                    : null;
             });
         else if (kwargs.callback)
-            return kwargs.callback(null, app, Object.freeze([]), Object.freeze([]));
+            return kwargs.callback(null, app, <any[]>Object.freeze([]), <any[]>Object.freeze([]));
 
     // Create/init database models, populated exported collections, serve API
     waterline.initialize(kwargs.waterline_config, (err, ontology) => {
@@ -114,11 +116,12 @@ export function strapFramework(kwargs: IStrapFramework) {
 
         if (kwargs.start_app) // Start API server
             app.listen(process.env['PORT'] || 3000, () => {
-                kwargs.logger.info('%s listening at %s', app.name, app.url);
+                kwargs.logger.info('%s listening from %s', app.name, app.url);
 
                 if (kwargs.createSampleData && kwargs.sampleDataToCreate)
-                    async.series((kwargs.sampleDataToCreate)(new kwargs.SampleData(app.url)), (err, results) =>
-                        err ? console.error(err) : console.info(results)
+                    async.series((kwargs.sampleDataToCreate
+                        )(new kwargs.SampleData(app.url, ontology.connections, kwargs.collections)), (err, results) =>
+                            err ? console.error(err) : console.info(results)
                     );
                 if (kwargs.callback)
                     return kwargs.callback(null, app, ontology.connections, kwargs.collections);
