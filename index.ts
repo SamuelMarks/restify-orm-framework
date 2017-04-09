@@ -6,6 +6,7 @@ import { createLogger } from 'bunyan';
 import { WaterlineError } from 'restify-errors';
 import { createClient } from 'redis';
 import { IStrapFramework } from 'restify-utils';
+import { format, isNullOrUndefined } from 'util';
 
 export function strapFramework(kwargs: IStrapFramework) {
     if (kwargs.root === undefined) kwargs.root = '/api';
@@ -104,6 +105,12 @@ export function strapFramework(kwargs: IStrapFramework) {
     // Create/init database models, populated exported collections, serve API
     waterline.initialize(kwargs.waterline_config, (err, ontology) => {
         if (err !== null) {
+            if (kwargs.callback) return kwargs.callback(err);
+            throw err;
+        }
+        else if (isNullOrUndefined(ontology) || !ontology.connections || !ontology.collections) {
+            console.error('ontology =', ontology);
+            const err = new TypeError(format('Expected ontology with connections & collections, got: %j', ontology));
             if (kwargs.callback) return kwargs.callback(err);
             throw err;
         }
