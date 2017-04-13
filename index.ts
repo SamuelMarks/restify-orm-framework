@@ -6,9 +6,9 @@ import { createLogger } from 'bunyan';
 import { WaterlineError } from 'restify-errors';
 import { createClient } from 'redis';
 import { IStrapFramework } from 'restify-utils';
-import { format, isNullOrUndefined } from 'util';
+import { isNullOrUndefined } from 'util';
 
-export function strapFramework(kwargs: IStrapFramework) {
+export const strapFramework = (kwargs: IStrapFramework) => {
     if (kwargs.root === undefined) kwargs.root = '/api';
     if (kwargs.app_logging === undefined) kwargs.app_logging = true;
     if (kwargs.start_app === undefined) kwargs.start_app = true;
@@ -42,20 +42,17 @@ export function strapFramework(kwargs: IStrapFramework) {
         }
     ));
 
-    function tryTblInit(entity) {
-        return model => {
-            kwargs.models_and_routes[entity].models
-            && (kwargs.models_and_routes[entity].models[model].identity
-            || kwargs.models_and_routes[entity].models[model].tableName) ?
-                waterline.loadCollection(
-                    Collection.extend(
-                        kwargs.models_and_routes[entity].models[model]
-                    )
-                ) : kwargs.logger.warn(`Not initialising: ${entity}.${model}`)
-        }
-    }
+    const tryTblInit = entity => model =>
+        kwargs.models_and_routes[entity].models
+        && (kwargs.models_and_routes[entity].models[model].identity
+        || kwargs.models_and_routes[entity].models[model].tableName) ?
+            waterline.loadCollection(
+                Collection.extend(
+                    kwargs.models_and_routes[entity].models[model]
+                )
+            ) : kwargs.logger.warn(`Not initialising: ${entity}.${model}`);
 
-    //models_and_routes['contact'] && tryTblInit('contact')('Contact');
+    // models_and_routes['contact'] && tryTblInit('contact')('Contact');
 
     // Init database obj
     const waterline: waterline = new Waterline();
@@ -96,11 +93,11 @@ export function strapFramework(kwargs: IStrapFramework) {
                 kwargs.logger.info('%s listening at %s', app.name, app.url);
 
                 return kwargs.callback ?
-                    kwargs.callback(null, app, <any[]>Object.freeze([]), <any[]>Object.freeze([]))
+                    kwargs.callback(null, app, Object.freeze([]) as any[], Object.freeze([]) as any[])
                     : null;
             });
         else if (kwargs.callback)
-            return kwargs.callback(null, app, <any[]>Object.freeze([]), <any[]>Object.freeze([]));
+            return kwargs.callback(null, app, Object.freeze([]) as any[], Object.freeze([]) as any[]);
 
     // Create/init database models, populated exported collections, serve API
     waterline.initialize(kwargs.waterline_config, (err, ontology) => {
@@ -108,15 +105,16 @@ export function strapFramework(kwargs: IStrapFramework) {
             if (kwargs.callback) return kwargs.callback(err);
             throw err;
         }
+        /* tslint:disable:one-line */
         else if (isNullOrUndefined(ontology) || !ontology.connections || !ontology.collections) {
             console.error('ontology =', ontology);
-            const err = new TypeError(format('Expected ontology with connections & collections, got: %j', ontology));
-            if (kwargs.callback) return kwargs.callback(err);
-            throw err;
+            const error = new TypeError('Expected ontology with connections & collections');
+            if (kwargs.callback) return kwargs.callback(error);
+            throw error;
         }
 
         // Tease out fully initialised models.
-        kwargs.collections = <Waterline.Query[]>(ontology.collections);
+        kwargs.collections = ontology.collections as Waterline.Query[];
         kwargs.logger.info('ORM initialised with collections:', Object.keys(kwargs.collections));
 
         kwargs._cache['collections'] = kwargs.collections; // pass by reference
@@ -127,8 +125,9 @@ export function strapFramework(kwargs: IStrapFramework) {
 
                 if (kwargs.createSampleData && kwargs.sampleDataToCreate)
                     async.series((kwargs.sampleDataToCreate
-                        )(new kwargs.SampleData(app.url, ontology.connections, kwargs.collections)), (err, results) =>
-                            err ? console.error(err) : console.info(results)
+                        )(new kwargs.SampleData(app.url, ontology.connections, kwargs.collections)), (e, results) =>
+                            /* tslint:disable:no-console */
+                            e ? console.error(e) : console.info(results)
                     );
                 if (kwargs.callback)
                     return kwargs.callback(null, app, ontology.connections, kwargs.collections);
@@ -137,11 +136,11 @@ export function strapFramework(kwargs: IStrapFramework) {
         else if (kwargs.callback)
             return kwargs.callback(null, app, ontology.connections, kwargs.collections); // E.g.: for testing
     });
-}
+};
 
-export function add_to_body_mw(...updates: Array<[string, string]>): restify.RequestHandler {
-    return function (req: restify.Request, res: restify.Response, next: restify.Next) {
+export const add_to_body_mw = (...updates: Array<[string, string]>): restify.RequestHandler =>
+    (req: restify.Request, res: restify.Response, next: restify.Next) => {
+        /* tslint:disable:no-unused-expression */
         req.body && updates.map(pair => req.body[pair[0]] = updates[pair[1]]);
         return next();
-    }
-}
+    };
