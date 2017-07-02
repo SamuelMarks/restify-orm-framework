@@ -1,7 +1,6 @@
 import * as restify from 'restify';
 import * as Waterline from 'waterline';
 import { Collection, waterline, WLError } from 'waterline';
-import * as async from 'async';
 import { createLogger } from 'bunyan';
 import { WaterlineError } from 'restify-errors';
 import { createClient } from 'redis';
@@ -17,7 +16,7 @@ export const strapFramework = (kwargs: IStrapFramework) => {
     if (kwargs.createSampleData === undefined) kwargs.createSampleData = !process.env['NO_SAMPLE_DATA'];
 
     // Init server obj
-    const app = restify.createServer({name: kwargs.app_name});
+    const app = restify.createServer({ name: kwargs.app_name });
 
     app.use(restify.queryParser());
     app.use(restify.bodyParser());
@@ -37,7 +36,7 @@ export const strapFramework = (kwargs: IStrapFramework) => {
 
     ['/', '/version', '/api', '/api/version'].map(route_path => app.get(route_path,
         (req: restify.Request, res: restify.Response, next: restify.Next) => {
-            res.json({version: kwargs.package_.version});
+            res.json({ version: kwargs.package_.version });
             return next();
         }
     ));
@@ -101,13 +100,13 @@ export const strapFramework = (kwargs: IStrapFramework) => {
 
     // Create/init database models, populated exported collections, serve API
     waterline.initialize(kwargs.waterline_config, (err, ontology) => {
-        if (err !== null) {
+        if (err != null) {
             if (kwargs.callback) return kwargs.callback(err);
             throw err;
         }
         /* tslint:disable:one-line */
         else if (isNullOrUndefined(ontology) || !ontology.connections || !ontology.collections) {
-            console.error('ontology =', ontology);
+            kwargs.logger.error('ontology =', ontology);
             const error = new TypeError('Expected ontology with connections & collections');
             if (kwargs.callback) return kwargs.callback(error);
             throw error;
@@ -123,13 +122,10 @@ export const strapFramework = (kwargs: IStrapFramework) => {
             app.listen(process.env['PORT'] || 3000, () => {
                 kwargs.logger.info('%s listening from %s', app.name, app.url);
 
-                if (kwargs.createSampleData && kwargs.sampleDataToCreate)
-                    async.series((kwargs.sampleDataToCreate
-                        )(new kwargs.SampleData(app.url, ontology.connections, kwargs.collections)), (e, results) =>
-                            /* tslint:disable:no-console */
-                            e ? console.error(e) : console.info(results)
-                    );
-                if (kwargs.callback)
+                if (kwargs.onServerStart) /* tslint:disable:no-empty*/
+                    kwargs.onServerStart(app.url, ontology.connections, kwargs.collections, app,
+                        kwargs.callback == null ? () => {} : kwargs.callback);
+                else if (kwargs.callback)
                     return kwargs.callback(null, app, ontology.connections, kwargs.collections);
                 return;
             });
