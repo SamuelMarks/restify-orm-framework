@@ -121,22 +121,22 @@ export const strapFramework = (kwargs: IStrapFramework) => {
 
         kwargs._cache['collections'] = kwargs.collections; // pass by reference
 
-        const handleEnd = () => {
-            if (kwargs.start_app) // Start API server
-                app.listen(process.env['PORT'] || 3000, () => {
-                    kwargs.logger.info('%s listening from %s', app.name, app.url);
+        // const handleEnd = () => {
+        if (kwargs.start_app) // Start API server
+            app.listen(process.env['PORT'] || 3000, () => {
+                kwargs.logger.info('%s listening from %s', app.name, app.url);
 
-                    if (kwargs.onServerStart != null) /* tslint:disable:no-empty*/
-                        kwargs.onServerStart(app.url, ontology.datastores, kwargs.collections, app,
-                            kwargs.callback == null ? () => {} : kwargs.callback);
-                    else if (kwargs.callback != null)
-                        return kwargs.callback(null, app, ontology.datastores, kwargs.collections);
-                    return;
-                });
-            else if (kwargs.callback != null)
-                return kwargs.callback(null, app, ontology.datastores, kwargs.collections); // E.g.: for testing
-        };
-
+                if (kwargs.onServerStart != null) /* tslint:disable:no-empty*/
+                    kwargs.onServerStart(app.url, ontology.datastores, kwargs.collections, app,
+                        kwargs.callback == null ? () => {} : kwargs.callback);
+                else if (kwargs.callback != null)
+                    return kwargs.callback(null, app, ontology.datastores, kwargs.collections);
+                return;
+            });
+        else if (kwargs.callback != null)
+            return kwargs.callback(null, app, ontology.datastores, kwargs.collections); // E.g.: for testing
+        // };
+        /*
         if (kwargs.onDbInit) {
             if (kwargs.onDbInitCb == null)
                 kwargs.onDbInitCb = (error: Error, datastores: Waterline.Connection[],
@@ -153,6 +153,7 @@ export const strapFramework = (kwargs: IStrapFramework) => {
         }
         else
             return handleEnd();
+        */
     });
 };
 
