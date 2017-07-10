@@ -11,7 +11,7 @@
     "redis": "^2.7.1",
     "restify": "^5.0.0",
     "restify-plugins": "^1.6.0",
-    "waterline": "^0.12.2"
+    "waterline": "0.13.0-rc11"
   },
   "devDependencies": {
     "@types/async": "^2.0.40",
