@@ -1,5 +1,5 @@
 import * as restify from 'restify';
-import { bodyParser, queryParser } from 'restify-plugins';
+import { auditLogger, bodyParser, queryParser } from 'restify-plugins';
 import * as Waterline from 'waterline';
 import { Collection, waterline, WLError } from 'waterline';
 import { createLogger } from 'bunyan';
@@ -30,12 +30,12 @@ export const strapFramework = (kwargs: IStrapFramework) => {
     );
 
     if (kwargs.app_logging)
-        app.on('after', restify.auditLogger({
+        app.on('after', auditLogger({
             log: createLogger({
                 name: 'audit',
                 stream: process.stdout
             })
-        }));
+        }) as any);
 
     ['/', '/version', '/api', '/api/version'].map(route_path => app.get(route_path,
         (req: restify.Request, res: restify.Response, next: restify.Next) => {
