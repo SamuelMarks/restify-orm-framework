@@ -51,7 +51,7 @@ export const strapFramework = (kwargs: IStrapFramework) => {
         kwargs.models_and_routes[entity].models
         && (kwargs.models_and_routes[entity].models[model].identity
         || kwargs.models_and_routes[entity].models[model].tableName) ?
-            waterline_obj.loadCollection(
+            waterline_obj['registerModel'](
                 Collection.extend(
                     kwargs.models_and_routes[entity].models[model]
                 )
