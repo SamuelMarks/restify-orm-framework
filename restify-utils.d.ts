@@ -4,7 +4,7 @@ import * as bunyan from 'bunyan';
 import { ConfigOptions, Connection, Query, WLError } from 'waterline';
 import { Redis, RedisOptions } from 'ioredis';
 
-export type DbInitCb = (err: Error, connections: Connection[], collections: Query[], finale: () => void) => void;
+export type DbInitCb = (err: Error, datastores: Connection[], collections: Query[], finale: () => void) => void;
 
 export interface IStrapFramework {
     app_name: string;
@@ -34,13 +34,13 @@ export interface IStrapFramework {
     use_redis?: boolean;
     redis_cursors?: {redis: Redis};
     listen_port?: number;
-    onServerStart?: (uri: string, connections: Connection[], collections: Query[], app: Server, next) => void;
+    onServerStart?: (uri: string, datastores: Connection[], collections: Query[], app: Server, next) => void;
     onDbInitCb?: DbInitCb;
-    onDbInit?: (app: Server, connections: Connection[], collections: Query[],
+    onDbInit?: (app: Server, datastores: Connection[], collections: Query[],
                 finale: () => void, next: DbInitCb) => void;
     createServerArgs?: restify.ServerOptions;
     callback?: (err: Error | WLError, app?: restify.Server,
-                connections?: Connection[], collections?: Query[]) => void;
+                datastores?: Connection[], collections?: Query[]) => void;
 }
 
 export declare const strapFramework: (kwargs: IStrapFramework) => void;
