@@ -1,6 +1,6 @@
 {
   "name": "restify-utils",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Utility functions for restify, including framework-style ones",
   "main": "index.js",
   "dependencies": {
@@ -11,16 +11,16 @@
     "redis": "^2.7.1",
     "restify": "^5.0.0",
     "restify-plugins": "^1.6.0",
-    "waterline": "0.13.0-rc11"
+    "waterline": "https://api.github.com/repos/SamuelMarks/waterline/tarball/c91bdf46d400180ae7e800f684f8fb44f8fed9a5"
   },
   "devDependencies": {
     "@types/async": "^2.0.40",
     "@types/bunyan": "1.8.0",
     "@types/ioredis": "0.0.23",
-    "@types/node": "^8.0.9",
+    "@types/node": "^8.0.10",
     "@types/redis": "^2.6.0",
-    "@types/restify": "^4.3.4",
-    "@types/restify-plugins": "^1.5.5"
+    "@types/restify": "^5.0.0",
+    "@types/restify-plugins": "^1.5.6"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

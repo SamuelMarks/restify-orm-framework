@@ -51,7 +51,7 @@ export const strapFramework = (kwargs: IStrapFramework) => {
         kwargs.models_and_routes[entity].models
         && (kwargs.models_and_routes[entity].models[model].identity
         || kwargs.models_and_routes[entity].models[model].tableName) ?
-            waterline_obj['registerModel'](
+            waterline_obj.loadCollection(
                 Collection.extend(
                     kwargs.models_and_routes[entity].models[model]
                 )
@@ -106,11 +106,11 @@ export const strapFramework = (kwargs: IStrapFramework) => {
         }
         /* tslint:disable:one-line */
         else if (
-            ontology == null || ontology.datastores == null || ontology.collections == null
-            || ontology.datastores.length === 0 || ontology.collections.length === 0
+            ontology == null || ontology.connections == null || ontology.collections == null
+            || ontology.connections.length === 0 || ontology.collections.length === 0
         ) {
             kwargs.logger.error('ontology =', ontology);
-            const error = new TypeError('Expected ontology with datastores & collections');
+            const error = new TypeError('Expected ontology with connections & collections');
             if (kwargs.callback != null) return kwargs.callback(error);
             throw error;
         }
@@ -127,33 +127,33 @@ export const strapFramework = (kwargs: IStrapFramework) => {
                 kwargs.logger.info('%s listening from %s', app.name, app.url);
 
                 if (kwargs.onServerStart != null) /* tslint:disable:no-empty*/
-                    kwargs.onServerStart(app.url, ontology.datastores, kwargs.collections, app,
+                    kwargs.onServerStart(app.url, ontology.connections, kwargs.collections, app,
                         kwargs.callback == null ? () => {} : kwargs.callback);
                 else if (kwargs.callback != null)
-                    return kwargs.callback(null, app, ontology.datastores, kwargs.collections);
+                    return kwargs.callback(null, app, ontology.connections, kwargs.collections);
                 return;
             });
         else if (kwargs.callback != null)
-            return kwargs.callback(null, app, ontology.datastores, kwargs.collections); // E.g.: for testing
+            return kwargs.callback(null, app, ontology.connections, kwargs.collections); // E.g.: for testing
         // };
         /*
-        if (kwargs.onDbInit) {
-            if (kwargs.onDbInitCb == null)
-                kwargs.onDbInitCb = (error: Error, datastores: Waterline.Connection[],
-                                     collections: Waterline.Collection[], finale: () => void): void => {
-                    if (error != null) {
-                        if (kwargs.callback != null) return kwargs.callback(error);
-                        throw error;
-                    }
-                    ontology.datastores = datastores;
-                    ontology.collections = collections;
-                    return finale();
-                };
-            return kwargs.onDbInit(app, ontology.datastores, kwargs.collections, handleEnd, kwargs.onDbInitCb);
-        }
-        else
-            return handleEnd();
-        */
+         if (kwargs.onDbInit) {
+         if (kwargs.onDbInitCb == null)
+         kwargs.onDbInitCb = (error: Error, connections: Waterline.Connection[],
+         collections: Waterline.Collection[], finale: () => void): void => {
+         if (error != null) {
+         if (kwargs.callback != null) return kwargs.callback(error);
+         throw error;
+         }
+         ontology.connections = connections;
+         ontology.collections = collections;
+         return finale();
+         };
+         return kwargs.onDbInit(app, ontology.connections, kwargs.collections, handleEnd, kwargs.onDbInitCb);
+         }
+         else
+         return handleEnd();
+         */
     });
 };
 
