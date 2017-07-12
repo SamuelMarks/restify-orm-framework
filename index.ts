@@ -5,7 +5,7 @@ import { Collection, waterline, WLError } from 'waterline';
 import { createLogger } from 'bunyan';
 import { WaterlineError } from 'custom-restify-errors';
 import * as Redis from 'ioredis';
-import { IStrapFramework } from 'restify-utils';
+import { IStrapFramework } from 'restify-waterline-utils';
 
 export const strapFramework = (kwargs: IStrapFramework) => {
     if (kwargs.root == null) kwargs.root = '/api';

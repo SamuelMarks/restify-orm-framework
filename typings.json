@@ -2,7 +2,7 @@
   "dependencies": {
     "nodejs-utils": "github:SamuelMarks/nodejs-utils/nodejs-utils.d.ts",
     "custom-restify-errors": "github:SamuelMarks/custom-restify-errors/custom-restify-errors.d.ts",
-    "restify-utils": "github:SamuelMarks/restify-utils/restify-utils.d.ts#3d6d4f5a209ca1cb356d69d9e72f567d476c57fa",
+    "restify-waterline-utils": "github:SamuelMarks/restify-waterline-utils/restify-waterline-utils.d.ts",
     "waterline": "github:SamuelMarks/cust_typings/waterline/waterline.d.ts"
   }
 }

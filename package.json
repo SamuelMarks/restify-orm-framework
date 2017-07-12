@@ -1,7 +1,7 @@
 {
-  "name": "restify-utils",
-  "version": "0.2.4",
-  "description": "Utility functions for restify, including framework-style ones",
+  "name": "restify-waterline-utils",
+  "version": "0.0.7",
+  "description": "Utility functions for integrating waterline with restify; framework-style.",
   "main": "index.js",
   "dependencies": {
     "async": "^2.5.0",
@@ -27,12 +27,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://SamuelMarks@github.com/SamuelMarks/restify-utils.git"
+    "url": "git+https://SamuelMarks@github.com/SamuelMarks/restify-waterline-utils.git"
   },
-  "author": "Samuel Marks <samuelmarks@gmail.com>",
+  "author": "Samuel Marks <samuel@offscale.io>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/SamuelMarks/restify-utils/issues"
+    "url": "https://github.com/SamuelMarks/restify-waterline-utils/issues"
   },
-  "homepage": "https://github.com/SamuelMarks/restify-utils#readme"
+  "homepage": "https://github.com/SamuelMarks/restify-waterline-utils#readme"
 }
