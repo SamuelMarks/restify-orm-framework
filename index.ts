@@ -1,3 +1,4 @@
+import { dirname } from 'path';
 import * as restify from 'restify';
 import { auditLogger, bodyParser, queryParser } from 'restify-plugins';
 import * as Waterline from 'waterline';
@@ -47,35 +48,30 @@ export const strapFramework = (kwargs: IStrapFramework) => {
     // Init database obj
     const waterline_obj: waterline = new Waterline();
 
-    const tryTblInit = entity => model =>
-        kwargs.models_and_routes[entity].models
-        && (kwargs.models_and_routes[entity].models[model].identity
-        || kwargs.models_and_routes[entity].models[model].tableName) ?
-            waterline_obj.loadCollection(
-                Collection.extend(
-                    kwargs.models_and_routes[entity].models[model]
-                )
-            ) : kwargs.logger.warn(`Not initialising: ${entity}.${model}`);
+    const tryTblInit = (program: any, models_set: Set<string>, norm_set: Set<string>) =>
+        Object.keys(program).forEach(entity =>
+            program[entity] != null && (program[entity].identity || program[entity].tableName) ?
+                models_set.add(entity) && waterline_obj.loadCollection(Collection.extend(program[entity]))
+                : norm_set.add(entity)
+        );
 
     // models_and_routes['contact'] && tryTblInit('contact')('Contact');
+    const routes = new Set<string>();
+    const models = new Set<string>();
+    const norm = new Set<string>();
 
-    Object.keys(kwargs.models_and_routes).map(entity => {
-        // Merge routes
-        if (kwargs.models_and_routes[entity].routes)
-            Object.keys(kwargs.models_and_routes[entity].routes).map(
-                route => kwargs.models_and_routes[entity].routes[route](
-                    app, `${kwargs.root}/${entity}`
+    for (const [fname, program] of kwargs.models_and_routes)
+        if (program != null)
+            if (fname.indexOf('model') > -1 && !kwargs.skip_db) /* Merge models */
+                tryTblInit(program, models, norm);
+            else /* Merge routes */ routes.add(Object.keys(program).map((route: string) =>
+                (program[route] as ((app: restify.Server, namespace: string) => void))(
+                    app, `${kwargs.root}/${dirname(fname)}`
                 )
-            );
-
-        if (kwargs.models_and_routes[entity].route)
-            Object.keys(kwargs.models_and_routes[entity].route).map(
-                route => kwargs.models_and_routes[entity].route[route](app, `${kwargs.root}/${entity}`));
-
-        // Merge models
-        if (!kwargs.skip_db && kwargs.models_and_routes[entity].models)
-            Object.keys(kwargs.models_and_routes[entity].models).map(tryTblInit(entity));
-    });
+            ) && dirname(fname));
+    kwargs.logger.info('Registered routes:', Array.from(routes.keys()).join('; '), ';');
+    kwargs.logger.warn('Failed registering models:', Array.from(norm.keys()).join('; '), ';');
+    kwargs.logger.info('Registered models:', Array.from(models.keys()).join('; '), ';');
 
     if (kwargs.use_redis) {
         kwargs.redis_cursors.redis = new Redis(kwargs.redis_config);
@@ -91,9 +87,8 @@ export const strapFramework = (kwargs: IStrapFramework) => {
             app.listen(kwargs.listen_port, () => {
                 kwargs.logger.info('%s listening at %s', app.name, app.url);
 
-                return kwargs.callback != null ?
-                    kwargs.callback(null, app, Object.freeze([]) as any[], Object.freeze([]) as any[])
-                    : null;
+                return kwargs.callback == null ? null
+                    : kwargs.callback(null, app, Object.freeze([]) as any[], Object.freeze([]) as any[]);
             });
         else if (kwargs.callback != null)
             return kwargs.callback(null, app, Object.freeze([]) as any[], Object.freeze([]) as any[]);
@@ -103,13 +98,9 @@ export const strapFramework = (kwargs: IStrapFramework) => {
         if (err != null) {
             if (kwargs.callback != null) return kwargs.callback(err);
             throw err;
-        }
-        /* tslint:disable:one-line */
-        else if (
-            ontology == null || ontology.connections == null || ontology.collections == null
-            || ontology.connections.length === 0 || ontology.collections.length === 0
-        ) {
-            kwargs.logger.error('ontology =', ontology);
+        } else if (ontology == null || ontology.connections == null || ontology.collections == null
+            || ontology.connections.length === 0 || ontology.collections.length === 0) {
+            kwargs.logger.error('ontology =', ontology, ';');
             const error = new TypeError('Expected ontology with connections & collections');
             if (kwargs.callback != null) return kwargs.callback(error);
             throw error;
@@ -117,14 +108,14 @@ export const strapFramework = (kwargs: IStrapFramework) => {
 
         // Tease out fully initialised models.
         kwargs.collections = ontology.collections as Waterline.Query[];
-        kwargs.logger.info('ORM initialised with collections:', Object.keys(kwargs.collections));
+        kwargs.logger.info('ORM initialised with collections:', Object.keys(kwargs.collections), ';');
 
         kwargs._cache['collections'] = kwargs.collections; // pass by reference
 
         // const handleEnd = () => {
         if (kwargs.start_app) // Start API server
             app.listen(process.env['PORT'] || 3000, () => {
-                kwargs.logger.info('%s listening from %s', app.name, app.url);
+                kwargs.logger.info('%s listening from %s;', app.name, app.url);
 
                 if (kwargs.onServerStart != null) /* tslint:disable:no-empty*/
                     kwargs.onServerStart(app.url, ontology.connections, kwargs.collections, app,

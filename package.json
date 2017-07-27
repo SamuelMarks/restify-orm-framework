@@ -7,20 +7,20 @@
     "async": "^2.5.0",
     "bunyan": "^1.8.10",
     "custom-restify-errors": "https://api.github.com/repos/SamuelMarks/custom-restify-errors-dist/tarball",
-    "ioredis": "^3.1.1",
+    "ioredis": "^3.1.2",
     "redis": "^2.7.1",
-    "restify": "^5.0.0",
+    "restify": "^5.0.1",
     "restify-plugins": "^1.6.0",
     "waterline": "https://api.github.com/repos/SamuelMarks/waterline/tarball/c91bdf46d400180ae7e800f684f8fb44f8fed9a5"
   },
   "devDependencies": {
     "@types/async": "^2.0.40",
     "@types/bunyan": "1.8.0",
-    "@types/ioredis": "0.0.23",
-    "@types/node": "^8.0.10",
+    "@types/ioredis": "0.0.24",
+    "@types/node": "^8.0.17",
     "@types/redis": "^2.6.0",
-    "@types/restify": "^5.0.0",
-    "@types/restify-plugins": "^1.5.6"
+    "@types/restify": "^5.0.1",
+    "@types/restify-plugins": "^1.5.7"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

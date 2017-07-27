@@ -8,19 +8,10 @@ export type DbInitCb = (err: Error, datastores: Connection[], collections: Query
 
 export interface IStrapFramework {
     app_name: string;
-    models_and_routes: {
-        [key: string]: {
-            route?: {
-                create?: restify.RequestHandler, read?: restify.RequestHandler,
-                update?: restify.RequestHandler, del?: restify.RequestHandler
-            };
-            routes?: {
-                create?: restify.RequestHandler, read?: restify.RequestHandler,
-                update?: restify.RequestHandler, del?: restify.RequestHandler
-            };
-            models?: any; // ^ Could have more than CRUD, but this is better than `any` or `{}`
-        }
-    };
+    models_and_routes: Map<string, {
+        create?: restify.RequestHandler, read?: restify.RequestHandler,
+        update?: restify.RequestHandler, del?: restify.RequestHandler
+    } | {} | any>; // ^ Could have more than CRUD, but this is better than `any` or `{}`
     logger: bunyan;
     _cache: {};
     package_: {version: number};
