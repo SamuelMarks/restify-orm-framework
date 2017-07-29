@@ -7,6 +7,7 @@ import { createLogger } from 'bunyan';
 import { WaterlineError } from 'custom-restify-errors';
 import * as Redis from 'ioredis';
 import { IStrapFramework } from 'restify-waterline-utils';
+import { model_route_to_map } from 'nodejs-utils';
 
 export const strapFramework = (kwargs: IStrapFramework) => {
     if (kwargs.root == null) kwargs.root = '/api';
@@ -60,6 +61,8 @@ export const strapFramework = (kwargs: IStrapFramework) => {
     const models = new Set<string>();
     const norm = new Set<string>();
 
+    if (!(kwargs.models_and_routes instanceof Map))
+        kwargs.models_and_routes = model_route_to_map(kwargs.models_and_routes);
     for (const [fname, program] of kwargs.models_and_routes)
         if (program != null)
             if (fname.indexOf('model') > -1 && !kwargs.skip_db) /* Merge models */

@@ -11,7 +11,7 @@ export interface IStrapFramework {
     models_and_routes: Map<string, {
         create?: restify.RequestHandler, read?: restify.RequestHandler,
         update?: restify.RequestHandler, del?: restify.RequestHandler
-    } | {} | any>; // ^ Could have more than CRUD, but this is better than `any` or `{}`
+    } | {} | any> | {}; // ^ Could have more than CRUD, but this is better than `any` or `{}`
     logger: bunyan;
     _cache: {};
     package_: {version: number};

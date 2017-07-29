@@ -1,6 +1,6 @@
 {
   "name": "restify-waterline-utils",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Utility functions for integrating waterline with restify; framework-style.",
   "main": "index.js",
   "dependencies": {
@@ -8,6 +8,7 @@
     "bunyan": "^1.8.10",
     "custom-restify-errors": "https://api.github.com/repos/SamuelMarks/custom-restify-errors-dist/tarball",
     "ioredis": "^3.1.2",
+    "nodejs-utils": "https://api.github.com/repos/SamuelMarks/nodejs-utils-dist/tarball",
     "redis": "^2.7.1",
     "restify": "^5.0.1",
     "restify-plugins": "^1.6.0",
