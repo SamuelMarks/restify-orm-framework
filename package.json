@@ -9,9 +9,11 @@
     "custom-restify-errors": "https://api.github.com/repos/SamuelMarks/custom-restify-errors-dist/tarball",
     "ioredis": "^3.1.2",
     "nodejs-utils": "https://api.github.com/repos/SamuelMarks/nodejs-utils-dist/tarball",
+    "pg": "^7.1.0",
     "redis": "^2.7.1",
     "restify": "^5.0.1",
     "restify-plugins": "^1.6.0",
+    "typeorm": "0.1.0-alpha.33",
     "waterline": "https://api.github.com/repos/SamuelMarks/waterline/tarball/c91bdf46d400180ae7e800f684f8fb44f8fed9a5"
   },
   "devDependencies": {

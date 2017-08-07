@@ -1,5 +1,5 @@
 restify-orm-framework
-=======================
+=====================
 
 Utility functions for integrating waterline with restify; framework-style.
 

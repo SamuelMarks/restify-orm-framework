@@ -6,9 +6,10 @@ import { Collection, waterline, WLError } from 'waterline';
 import { createLogger } from 'bunyan';
 import { WaterlineError } from 'custom-restify-errors';
 import * as Redis from 'ioredis';
+import { RedisOptions } from 'ioredis';
 import { IStrapFramework } from 'restify-orm-framework';
 import { model_route_to_map } from 'nodejs-utils';
-import { RedisOptions } from 'ioredis';
+import { Connection, createConnection } from 'typeorm';
 
 export const strapFramework = (kwargs: IStrapFramework) => {
     if (kwargs.root == null) kwargs.root = '/api';
@@ -17,6 +18,7 @@ export const strapFramework = (kwargs: IStrapFramework) => {
     if (kwargs.listen_port == null) /* tslint:disable:no-bitwise */
         kwargs.listen_port = typeof process.env['PORT'] === 'undefined' ? 3000 : ~~process.env['PORT'];
     if (kwargs.skip_waterline == null) kwargs.skip_waterline = true;
+    if (kwargs.skip_typeorm == null) kwargs.skip_typeorm = true;
     if (kwargs.skip_redis == null) kwargs.skip_redis = true;
     else if (kwargs.skip_redis && kwargs.redis_config == null)
         kwargs.redis_config = process.env['REDIS_URL'] == null ? { port: 6379 } : process.env['REDIS_URL'];
@@ -50,24 +52,31 @@ export const strapFramework = (kwargs: IStrapFramework) => {
     // Init database obj
     const waterline_obj: waterline = new Waterline();
 
-    const tryTblInit = (program: any, models_set: Set<string>, norm_set: Set<string>) =>
-        Object.keys(program).forEach(entity =>
-            program[entity] != null && (program[entity].identity || program[entity].tableName) ?
-                models_set.add(entity) && waterline_obj.loadCollection(Collection.extend(program[entity]))
-                : norm_set.add(entity)
-        );
+    const tryTblInit = (program, models_set, norm_set, typeorm_set) =>
+        Object.keys(program).forEach(entity => {
+            if (program[entity] != null)
+                if (program[entity].identity || program[entity].tableName) {
+                    models_set.add(entity);
+                    waterline_obj.loadCollection(Collection.extend(program[entity]));
+                } else if (typeof program[entity] === 'function'
+                    && program[entity].toString().indexOf('class') > -1
+                    && entity !== 'AccessToken')
+                    typeorm_set.add(program[entity]);
+                else norm_set.add(entity);
+        });
 
     // models_and_routes['contact'] && tryTblInit('contact')('Contact');
     const routes = new Set<string>();
     const models = new Set<string>();
     const norm = new Set<string>();
+    const typeorm = new Set<any /*program*/>();
 
     if (!(kwargs.models_and_routes instanceof Map))
         kwargs.models_and_routes = model_route_to_map(kwargs.models_and_routes);
     for (const [fname, program] of kwargs.models_and_routes as Map<string, any>)
         if (program != null)
-            if (fname.indexOf('model') > -1 && !kwargs.skip_waterline) /* Merge models */
-                tryTblInit(program, models, norm);
+            if /* Merge models */ (fname.indexOf('model') > -1 && (!kwargs.skip_waterline || !kwargs.skip_typeorm))
+                tryTblInit(program, models, norm, typeorm);
             else /* Merge routes */ routes.add(Object.keys(program).map((route: string) =>
                 (program[route] as ((app: restify.Server, namespace: string) => void))(
                     app, `${kwargs.root}/${dirname(fname)}`
@@ -77,7 +86,7 @@ export const strapFramework = (kwargs: IStrapFramework) => {
     kwargs.logger.warn('Failed registering models:', Array.from(norm.keys()).join('; '), ';');
     kwargs.logger.info('Registered models:', Array.from(models.keys()).join('; '), ';');
 
-    if (kwargs.skip_redis) {
+    if (!kwargs.skip_redis) {
         kwargs.redis_cursors.redis = new Redis(kwargs.redis_config as any as RedisOptions);
         kwargs.redis_cursors.redis.on('error', err => {
             kwargs.logger.error(`Redis::error event -
@@ -86,8 +95,8 @@ export const strapFramework = (kwargs: IStrapFramework) => {
         });
     }
 
-    if (kwargs.skip_waterline)
-        if (kwargs.skip_start_app)
+    if (kwargs.skip_waterline && kwargs.skip_typeorm)
+        if (!kwargs.skip_start_app)
             app.listen(kwargs.listen_port, () => {
                 kwargs.logger.info('%s listening at %s', app.name, app.url);
 
@@ -96,42 +105,45 @@ export const strapFramework = (kwargs: IStrapFramework) => {
             });
         else if (kwargs.callback != null)
             return kwargs.callback(null, app, Object.freeze([]) as any[], Object.freeze([]) as any[]);
+        else
+            return;
 
-    // Create/init database models, populated exported collections, serve API
-    waterline_obj.initialize(kwargs.waterline_config, (err, ontology) => {
-        if (err != null) {
-            if (kwargs.callback != null) return kwargs.callback(err);
-            throw err;
-        } else if (ontology == null || ontology.connections == null || ontology.collections == null
-            || ontology.connections.length === 0 || ontology.collections.length === 0) {
-            kwargs.logger.error('ontology =', ontology, ';');
-            const error = new TypeError('Expected ontology with connections & collections');
-            if (kwargs.callback != null) return kwargs.callback(error);
-            throw error;
-        }
+    const waterlineHandler = (connection?: Connection) => {
+        // Create/init database models, populated exported collections, serve API
+        waterline_obj.initialize(kwargs.waterline_config, (err, ontology) => {
+            if (err != null) {
+                if (kwargs.callback != null) return kwargs.callback(err);
+                throw err;
+            } else if (ontology == null || ontology.connections == null || ontology.collections == null
+                || ontology.connections.length === 0 || ontology.collections.length === 0) {
+                kwargs.logger.error('ontology =', ontology, ';');
+                const error = new TypeError('Expected ontology with connections & collections');
+                if (kwargs.callback != null) return kwargs.callback(error);
+                throw error;
+            }
 
-        // Tease out fully initialised models.
-        kwargs.collections = ontology.collections as Waterline.Query[];
-        kwargs.logger.info('ORM initialised with collections:', Object.keys(kwargs.collections), ';');
+            // Tease out fully initialised models.
+            kwargs.collections = ontology.collections as Waterline.Query[];
+            kwargs.logger.info('ORM initialised with collections:', Object.keys(kwargs.collections), ';');
 
-        kwargs._cache['collections'] = kwargs.collections; // pass by reference
+            kwargs._cache['collections'] = kwargs.collections; // pass by reference
 
-        // const handleEnd = () => {
-        if (kwargs.skip_start_app) // Start API server
-            return kwargs.callback(null, app, ontology.connections, kwargs.collections); // E.g.: for testing
-        else if (kwargs.callback != null)
-            app.listen(process.env['PORT'] || 3000, () => {
-                kwargs.logger.info('%s listening from %s;', app.name, app.url);
+            // const handleEnd = () => {
+            if (kwargs.skip_start_app) // Start API server
+                return kwargs.callback(null, app, ontology.connections, kwargs.collections, connection);
+            else if (kwargs.callback != null)
+                app.listen(process.env['PORT'] || 3000, () => {
+                    kwargs.logger.info('%s listening from %s;', app.name, app.url);
 
-                if (kwargs.onServerStart != null) /* tslint:disable:no-empty*/
-                    kwargs.onServerStart(app.url, ontology.connections, kwargs.collections, app,
-                        kwargs.callback == null ? () => {} : kwargs.callback);
-                else if (kwargs.callback != null)
-                    return kwargs.callback(null, app, ontology.connections, kwargs.collections);
-                return;
-            });
-        // };
-        /*
+                    if (kwargs.onServerStart != null) /* tslint:disable:no-empty*/
+                        kwargs.onServerStart(app.url, ontology.connections, kwargs.collections,
+                            connection, app, kwargs.callback == null ? () => {} : kwargs.callback);
+                    else if (kwargs.callback != null)
+                        return kwargs.callback(null, app, ontology.connections, kwargs.collections, connection);
+                    return;
+                });
+            // };
+            /*
          if (kwargs.onDbInit) {
          if (kwargs.onDbInitCb == null)
          kwargs.onDbInitCb = (error: Error, connections: Waterline.Connection[],
@@ -149,7 +161,22 @@ export const strapFramework = (kwargs: IStrapFramework) => {
          else
          return handleEnd();
          */
-    });
+        });
+    };
+
+    console.info('createConnection with:',
+        Object.assign({ entities: Array.from(typeorm.values()) },
+            kwargs.typeorm_config), ';');
+    if (!kwargs.skip_typeorm)
+        return createConnection(
+            Object.assign({ entities: Array.from(typeorm.values()).map(
+                entity => entity
+            ) }, kwargs.typeorm_config)
+        ).then(waterlineHandler).catch(err => {
+            if (kwargs.callback) return kwargs.callback(err);
+            throw err;
+        });
+    else return waterlineHandler();
 };
 
 export const add_to_body_mw = (...updates: Array<[string, string]>): restify.RequestHandler =>

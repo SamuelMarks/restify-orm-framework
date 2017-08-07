@@ -1,10 +1,13 @@
+import * as bunyan from 'bunyan';
 import * as restify from 'restify';
 import { Server } from 'restify';
-import * as bunyan from 'bunyan';
 import { ConfigOptions, Connection, Query, WLError } from 'waterline';
 import { Redis, RedisOptions } from 'ioredis';
+import { Connection as TypeOrmConnection, ConnectionOptions } from 'typeorm';
 
-export type DbInitCb = (err: Error, datastores: Connection[], collections: Query[], finale: () => void) => void;
+export type DbInitCb = (
+    err: Error, datastores: Connection[], collections: Query[], finale: () => void
+) => void;
 
 export interface IStrapFramework {
     app_name: string;
@@ -24,14 +27,19 @@ export interface IStrapFramework {
     redis_config?: RedisOptions | string;
     skip_redis?: boolean;
     redis_cursors?: {redis: Redis};
+    skip_typeorm?: boolean;
+    typeorm_config?: ConnectionOptions;
     listen_port?: number;
-    onServerStart?: (uri: string, datastores: Connection[], collections: Query[], app: Server, next) => void;
+    onServerStart?: (uri: string, datastores: Connection[], collections: Query[],
+                     connection: TypeOrmConnection, app: Server, next) => void;
     onDbInitCb?: DbInitCb;
     onDbInit?: (app: Server, datastores: Connection[], collections: Query[],
                 finale: () => void, next: DbInitCb) => void;
     createServerArgs?: restify.ServerOptions;
+    // E.g.: for testing:
     callback?: (err: Error | WLError, app?: restify.Server,
-                datastores?: Connection[], collections?: Query[]) => void;
+                datastores?: Connection[], collections?: Query[],
+                connection?: TypeOrmConnection) => void;
 }
 
 export declare const strapFramework: (kwargs: IStrapFramework) => void;
