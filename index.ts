@@ -6,18 +6,19 @@ import { Collection, waterline, WLError } from 'waterline';
 import { createLogger } from 'bunyan';
 import { WaterlineError } from 'custom-restify-errors';
 import * as Redis from 'ioredis';
-import { IStrapFramework } from 'restify-waterline-utils';
+import { IStrapFramework } from 'restify-orm-framework';
 import { model_route_to_map } from 'nodejs-utils';
+import { RedisOptions } from 'ioredis';
 
 export const strapFramework = (kwargs: IStrapFramework) => {
     if (kwargs.root == null) kwargs.root = '/api';
     if (kwargs.app_logging == null) kwargs.app_logging = true;
-    if (kwargs.start_app == null) kwargs.start_app = true;
+    if (kwargs.skip_start_app == null) kwargs.skip_start_app = false;
     if (kwargs.listen_port == null) /* tslint:disable:no-bitwise */
         kwargs.listen_port = typeof process.env['PORT'] === 'undefined' ? 3000 : ~~process.env['PORT'];
-    if (kwargs.skip_db == null) kwargs.skip_db = true;
-    if (kwargs.use_redis == null) kwargs.use_redis = false;
-    else if (kwargs.use_redis && kwargs.redis_config == null)
+    if (kwargs.skip_waterline == null) kwargs.skip_waterline = true;
+    if (kwargs.skip_redis == null) kwargs.skip_redis = true;
+    else if (kwargs.skip_redis && kwargs.redis_config == null)
         kwargs.redis_config = process.env['REDIS_URL'] == null ? { port: 6379 } : process.env['REDIS_URL'];
 
     // Init server obj
@@ -63,9 +64,9 @@ export const strapFramework = (kwargs: IStrapFramework) => {
 
     if (!(kwargs.models_and_routes instanceof Map))
         kwargs.models_and_routes = model_route_to_map(kwargs.models_and_routes);
-    for (const [fname, program] of kwargs.models_and_routes)
+    for (const [fname, program] of kwargs.models_and_routes as Map<string, any>)
         if (program != null)
-            if (fname.indexOf('model') > -1 && !kwargs.skip_db) /* Merge models */
+            if (fname.indexOf('model') > -1 && !kwargs.skip_waterline) /* Merge models */
                 tryTblInit(program, models, norm);
             else /* Merge routes */ routes.add(Object.keys(program).map((route: string) =>
                 (program[route] as ((app: restify.Server, namespace: string) => void))(
@@ -76,8 +77,8 @@ export const strapFramework = (kwargs: IStrapFramework) => {
     kwargs.logger.warn('Failed registering models:', Array.from(norm.keys()).join('; '), ';');
     kwargs.logger.info('Registered models:', Array.from(models.keys()).join('; '), ';');
 
-    if (kwargs.use_redis) {
-        kwargs.redis_cursors.redis = new Redis(kwargs.redis_config);
+    if (kwargs.skip_redis) {
+        kwargs.redis_cursors.redis = new Redis(kwargs.redis_config as any as RedisOptions);
         kwargs.redis_cursors.redis.on('error', err => {
             kwargs.logger.error(`Redis::error event -
             ${kwargs.redis_cursors.redis['host']}:${kwargs.redis_cursors.redis['port']}s- ${err}`);
@@ -85,8 +86,8 @@ export const strapFramework = (kwargs: IStrapFramework) => {
         });
     }
 
-    if (kwargs.skip_db)
-        if (kwargs.start_app)
+    if (kwargs.skip_waterline)
+        if (kwargs.skip_start_app)
             app.listen(kwargs.listen_port, () => {
                 kwargs.logger.info('%s listening at %s', app.name, app.url);
 
@@ -116,7 +117,9 @@ export const strapFramework = (kwargs: IStrapFramework) => {
         kwargs._cache['collections'] = kwargs.collections; // pass by reference
 
         // const handleEnd = () => {
-        if (kwargs.start_app) // Start API server
+        if (kwargs.skip_start_app) // Start API server
+            return kwargs.callback(null, app, ontology.connections, kwargs.collections); // E.g.: for testing
+        else if (kwargs.callback != null)
             app.listen(process.env['PORT'] || 3000, () => {
                 kwargs.logger.info('%s listening from %s;', app.name, app.url);
 
@@ -127,8 +130,6 @@ export const strapFramework = (kwargs: IStrapFramework) => {
                     return kwargs.callback(null, app, ontology.connections, kwargs.collections);
                 return;
             });
-        else if (kwargs.callback != null)
-            return kwargs.callback(null, app, ontology.connections, kwargs.collections); // E.g.: for testing
         // };
         /*
          if (kwargs.onDbInit) {

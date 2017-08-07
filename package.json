@@ -1,11 +1,11 @@
 {
-  "name": "restify-waterline-utils",
-  "version": "0.0.8",
+  "name": "restify-orm-framework",
+  "version": "0.1.0-alpha",
   "description": "Utility functions for integrating waterline with restify; framework-style.",
   "main": "index.js",
   "dependencies": {
     "async": "^2.5.0",
-    "bunyan": "^1.8.10",
+    "bunyan": "^1.8.12",
     "custom-restify-errors": "https://api.github.com/repos/SamuelMarks/custom-restify-errors-dist/tarball",
     "ioredis": "^3.1.2",
     "nodejs-utils": "https://api.github.com/repos/SamuelMarks/nodejs-utils-dist/tarball",
@@ -18,7 +18,7 @@
     "@types/async": "^2.0.40",
     "@types/bunyan": "1.8.0",
     "@types/ioredis": "0.0.24",
-    "@types/node": "^8.0.17",
+    "@types/node": "^8.0.19",
     "@types/redis": "^2.6.0",
     "@types/restify": "^5.0.1",
     "@types/restify-plugins": "^1.5.7"
@@ -28,12 +28,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://SamuelMarks@github.com/SamuelMarks/restify-waterline-utils.git"
+    "url": "git+https://SamuelMarks@github.com/SamuelMarks/restify-orm-framework.git"
   },
   "author": "Samuel Marks <samuel@offscale.io>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/SamuelMarks/restify-waterline-utils/issues"
+    "url": "https://github.com/SamuelMarks/restify-orm-framework/issues"
   },
-  "homepage": "https://github.com/SamuelMarks/restify-waterline-utils#readme"
+  "homepage": "https://github.com/SamuelMarks/restify-orm-framework#readme"
 }
