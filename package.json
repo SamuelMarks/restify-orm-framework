@@ -1,6 +1,6 @@
 {
   "name": "restify-orm-framework",
-  "version": "0.1.0-alpha",
+  "version": "0.1.0",
   "description": "Utility functions for integrating waterline with restify; framework-style.",
   "main": "index.js",
   "dependencies": {

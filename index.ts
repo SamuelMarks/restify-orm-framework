@@ -10,6 +10,7 @@ import { RedisOptions } from 'ioredis';
 import { IStrapFramework } from 'restify-orm-framework';
 import { model_route_to_map } from 'nodejs-utils';
 import { Connection, createConnection } from 'typeorm';
+import 'reflect-metadata';
 
 export const strapFramework = (kwargs: IStrapFramework) => {
     if (kwargs.root == null) kwargs.root = '/api';
@@ -52,7 +53,7 @@ export const strapFramework = (kwargs: IStrapFramework) => {
     // Init database obj
     const waterline_obj: waterline = new Waterline();
 
-    const tryTblInit = (program, models_set, norm_set, typeorm_set) =>
+    const tryTblInit = (program, models_set, norm_set, typeorm_map) =>
         Object.keys(program).forEach(entity => {
             if (program[entity] != null)
                 if (program[entity].identity || program[entity].tableName) {
@@ -61,7 +62,7 @@ export const strapFramework = (kwargs: IStrapFramework) => {
                 } else if (typeof program[entity] === 'function'
                     && program[entity].toString().indexOf('class') > -1
                     && entity !== 'AccessToken')
-                    typeorm_set.add(program[entity]);
+                    typeorm_map.set(entity, program[entity]);
                 else norm_set.add(entity);
         });
 
@@ -69,7 +70,7 @@ export const strapFramework = (kwargs: IStrapFramework) => {
     const routes = new Set<string>();
     const models = new Set<string>();
     const norm = new Set<string>();
-    const typeorm = new Set<any /*program*/>();
+    const typeorm = new Map<string, any /*program*/>();
 
     if (!(kwargs.models_and_routes instanceof Map))
         kwargs.models_and_routes = model_route_to_map(kwargs.models_and_routes);
@@ -108,23 +109,25 @@ export const strapFramework = (kwargs: IStrapFramework) => {
         else
             return;
 
+    const handleErr = err => {
+        if (kwargs.callback) return kwargs.callback(err);
+        throw err;
+    };
+
     const waterlineHandler = (connection?: Connection) => {
         // Create/init database models, populated exported collections, serve API
         waterline_obj.initialize(kwargs.waterline_config, (err, ontology) => {
-            if (err != null) {
-                if (kwargs.callback != null) return kwargs.callback(err);
-                throw err;
-            } else if (ontology == null || ontology.connections == null || ontology.collections == null
+            if (err != null)
+                return handleErr(err);
+            else if (ontology == null || ontology.connections == null || ontology.collections == null
                 || ontology.connections.length === 0 || ontology.collections.length === 0) {
                 kwargs.logger.error('ontology =', ontology, ';');
-                const error = new TypeError('Expected ontology with connections & collections');
-                if (kwargs.callback != null) return kwargs.callback(error);
-                throw error;
+                return handleErr(new TypeError('Expected ontology with connections & collections'));
             }
 
             // Tease out fully initialised models.
             kwargs.collections = ontology.collections as Waterline.Query[];
-            kwargs.logger.info('ORM initialised with collections:', Object.keys(kwargs.collections), ';');
+            kwargs.logger.info('Waterline initialised with collections:', Object.keys(kwargs.collections), ';');
 
             kwargs._cache['collections'] = kwargs.collections; // pass by reference
 
@@ -164,19 +167,18 @@ export const strapFramework = (kwargs: IStrapFramework) => {
         });
     };
 
-    console.info('createConnection with:',
-        Object.assign({ entities: Array.from(typeorm.values()) },
-            kwargs.typeorm_config), ';');
-    if (!kwargs.skip_typeorm)
-        return createConnection(
-            Object.assign({ entities: Array.from(typeorm.values()).map(
-                entity => entity
-            ) }, kwargs.typeorm_config)
-        ).then(waterlineHandler).catch(err => {
-            if (kwargs.callback) return kwargs.callback(err);
-            throw err;
-        });
-    else return waterlineHandler();
+    if (!kwargs.skip_typeorm) {
+        kwargs.logger.info('TypeORM initialised with entities:', Array.from(typeorm.keys()), ';');
+        try {
+            return createConnection(
+                Object.assign({
+                    entities: Array.from(typeorm.values())
+                }, kwargs.typeorm_config)
+            ).then(waterlineHandler).catch(handleErr);
+        } catch (e) {
+            return handleErr(e);
+        }
+    } else return waterlineHandler();
 };
 
 export const add_to_body_mw = (...updates: Array<[string, string]>): restify.RequestHandler =>

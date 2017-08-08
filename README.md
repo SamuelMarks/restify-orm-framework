@@ -1,13 +1,39 @@
 restify-orm-framework
 =====================
 
-Utility functions for integrating waterline with restify; framework-style.
+ Utility functions for integrating ORMs with restify; framework-style.
 
 If using TypeScript, install `typings` with:
 
     typings install github:SamuelMarks/restify-orm-framework/restify-orm-framework.d.ts --save
 
 Otherwise just use the [restify-orm-framework-dist](https://github.com/SamuelMarks/restify-orm-framework-dist) compiled output.
+
+## Supports
+
+ - [Waterline](https://github.com/balderdashy/waterline)
+ - [TypeORM](https://github.com/typeorm/typeorm)
+
+## Idea
+
+Have this directory structure:
+
+    ── main.[js|ts]
+    ── api
+    │   ├── auth
+    │   │   ├── middleware.[js|ts]
+    │   │   ├── models.[js|ts]
+    │   │   └── routes.[js|ts]
+    │   └── user
+    │       ├── models.[js|ts]
+    │       ├── routes.[js|ts]
+    │       └── utils.[js|ts]
+
+Where the main file doesn't import any models or routes explicitly.
+
+Models, routes and tests can be cleanly isolated also.
+
+Example: [restify-orm-scaffold](https://github.com/SamuelMarks/restify-orm-scaffold)
 
 ## Miscellaneous
 
