@@ -1,11 +1,11 @@
 {
   "name": "restify-orm-framework",
-  "version": "0.3.0-alpha",
+  "version": "0.3.0-beta",
   "description": "Utility functions for integrating waterline with restify; framework-style.",
   "main": "index.js",
   "dependencies": {
-    "@types/chai": "^4.0.2",
-    "@types/superagent": "^3.5.3",
+    "@types/chai": "^4.0.3",
+    "@types/superagent": "^3.5.4",
     "@types/supertest": "^2.0.2",
     "async": "^2.5.0",
     "bunyan": "^1.8.12",

@@ -35,24 +35,8 @@ const populateModels = (program: any,
             else norm_set.add(entity);
         });
 
-const handleStartApp = (kwargs: IStrapFramework, app: restify.Server,
-                        waterline_connections?: Connection[],
-                        waterline_collections?: typeof kwargs.waterline_collections,
-                        typeorm_connection?: TypeOrmConnection,
-                        sequelize_connection?: sequelize.Sequelize) => {
-    const orms_out: IOrmsOut = Object.freeze({
-        sequelize: {
-            connection: sequelize_connection
-        },
-        typeorm: {
-            connection: typeorm_connection
-        },
-        waterline: {
-            connection: waterline_connections,
-            collections: kwargs.waterline_collections
-        }
-    });
-    return kwargs.skip_start_app ? kwargs.callback != null && kwargs.callback(null, app, orms_out)
+const handleStartApp = (kwargs: IStrapFramework, app: restify.Server, orms_out: IOrmsOut) =>
+    kwargs.skip_start_app ? kwargs.callback != null && kwargs.callback(null, app, orms_out)
         : app.listen(kwargs.listen_port, () => {
             kwargs.logger.info('%s listening at %s', app.name, app.url);
 
@@ -63,7 +47,6 @@ const handleStartApp = (kwargs: IStrapFramework, app: restify.Server,
             else if (kwargs.callback != null)
                 return kwargs.callback(null, app, orms_out);
         });
-};
 
 const waterlineHandler = (kwargs: IStrapFramework,
                           app: restify.Server,
@@ -85,22 +68,22 @@ const waterlineHandler = (kwargs: IStrapFramework,
 
         // Tease out fully initialised models.
         kwargs.waterline_collections = ontology.collections as Waterline.Query[];
-        kwargs.logger.info('Waterline initialised with:', Object.keys(kwargs.waterline_collections), ';');
+        kwargs.logger.info('Waterline initialised with:\t', Object.keys(kwargs.waterline_collections), ';');
 
         kwargs._cache['waterline_collections'] = kwargs.waterline_collections; // pass by reference
 
-        return callback(null, { connections: ontology.connections, collections: kwargs.waterline_collections });
+        return callback(null, { connection: ontology.connections, collections: kwargs.waterline_collections });
     });
 };
 
 const typeormHandler = (kwargs: IStrapFramework, typeorm: Map<string, any>, callback: (err, ...args) => void) => {
     if (kwargs.skip_typeorm) return callback(void 0);
-    kwargs.logger.info('TypeORM initialising with:', Array.from(typeorm.keys()), ';');
+    kwargs.logger.info('TypeORM initialising with:\t', Array.from(typeorm.keys()), ';');
     try {
         return createConnection(Object.assign({
                 entities: Array.from(typeorm.values())
             }, kwargs.typeorm_config
-        )).then(connection => callback(null, connection)).catch(callback);
+        )).then(connection => callback(null, { connection })).catch(callback);
     } catch (e) {
         return callback(e);
     }
@@ -111,10 +94,10 @@ const sequelizeHandler = (kwargs: IStrapFramework,
                           sequelize_map: Map<string, any>,
                           callback: (err, ...args) => void) => {
     if (kwargs.skip_sequelize) return callback(void 0);
-    kwargs.logger.info('Sequelize initialising with:', Array.from(sequelize_map.keys()), ';');
+    kwargs.logger.info('Sequelize initialising with:\t', Array.from(sequelize_map.keys()), ';');
     const sequelize_obj = new sequelize.Sequelize(kwargs.sequelize_config as any);
     Array.from(sequelize_map.values()).forEach(e => e(sequelize_obj));
-    return callback(void 0, sequelize_obj);
+    return callback(void 0, { connection: sequelize_obj });
 };
 
 export const tearDownWaterlineConnections = (connections: Connection[], done: (error?: any) => any) =>
@@ -195,8 +178,8 @@ export const strapFramework = (kwargs: IStrapFramework) => {
                     )
                 ) && routes.add(dirname(fname));
 
-    kwargs.logger.info('Registered routes:', Array.from(routes.keys()).join('; '), ';');
-    kwargs.logger.warn('Failed registering models:', Array.from(norm.keys()).join('; '), ';');
+    kwargs.logger.info('Restify registered routes:\t', Array.from(routes.keys()), ';');
+    kwargs.logger.warn('Failed registering models:\t', Array.from(norm.keys()), ';');
 
     if (!kwargs.skip_redis) {
         kwargs.redis_cursors.redis = new Redis(kwargs.redis_config as any as RedisOptions);
@@ -211,15 +194,12 @@ export const strapFramework = (kwargs: IStrapFramework) => {
         sequelize: cb => sequelizeHandler(kwargs, app, sequelize_map, cb),
         typeorm: cb => typeormHandler(kwargs, typeorm_map, cb),
         waterline: cb => waterlineHandler(kwargs, app, waterline_set, cb),
-    }, (err: Error, result: {sequelize, typeorm, waterline}) => {
+    }, (err: Error, orms_out: IOrmsOut) => {
         if (err != null) {
             if (kwargs.callback) return kwargs.callback(err);
             throw err;
         }
-        return handleStartApp(
-            kwargs, app, (result.waterline || {}).connections, (result.waterline || {}).collections,
-            result.typeorm, result.sequelize
-        );
+        return handleStartApp(kwargs, app, orms_out);
     });
 };
 

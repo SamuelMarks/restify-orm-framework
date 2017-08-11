@@ -45,7 +45,7 @@ export interface IStrapFramework {
     redis_config?: RedisOptions | string;
     redis_cursors?: {redis: Redis};
     typeorm_config?: ConnectionOptions;
-    sequelize_config?: sequelize.Options|string;
+    sequelize_config?: sequelize.Options | string;
 
     omit_models?: string[];
 
