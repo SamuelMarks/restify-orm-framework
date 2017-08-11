@@ -19,16 +19,19 @@ export interface IStrapFramework {
     _cache: {};
     package_: {version: number};
     root?: string;
-    app_logging?: boolean;
+
+    skip_app_logging?: boolean;
     skip_start_app?: boolean;
     skip_waterline?: boolean;
-    collections?: Query[];
+    skip_redis?: boolean;
+    skip_typeorm?: boolean;
+
+    waterline_collections?: Query[];
     waterline_config?: ConfigOptions;
     redis_config?: RedisOptions | string;
-    skip_redis?: boolean;
     redis_cursors?: {redis: Redis};
-    skip_typeorm?: boolean;
     typeorm_config?: ConnectionOptions;
+
     listen_port?: number;
     onServerStart?: (uri: string, datastores: Connection[], collections: Query[],
                      connection: TypeOrmConnection, app: Server, next) => void;
@@ -38,8 +41,8 @@ export interface IStrapFramework {
     createServerArgs?: restify.ServerOptions;
     // E.g.: for testing:
     callback?: (err: Error | WLError, app?: restify.Server,
-                datastores?: Connection[], collections?: Query[],
-                connection?: TypeOrmConnection) => void;
+                datastores?: Connection[], waterline_collections?: Query[],
+                typeorm_connection?: TypeOrmConnection) => void;
 }
 
 export declare const strapFramework: (kwargs: IStrapFramework) => void;
