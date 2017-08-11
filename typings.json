@@ -3,6 +3,7 @@
     "custom-restify-errors": "github:SamuelMarks/custom-restify-errors/custom-restify-errors.d.ts",
     "nodejs-utils": "github:SamuelMarks/nodejs-utils/nodejs-utils.d.ts",
     "restify-orm-framework": "github:SamuelMarks/restify-orm-framework/restify-orm-framework.d.ts",
+    "sequelize": "registry:npm/sequelize#4.0.0+20170801015413",
     "waterline": "github:SamuelMarks/cust_typings/waterline/waterline.d.ts"
   }
 }

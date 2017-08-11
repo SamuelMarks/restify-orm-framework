@@ -1,11 +1,15 @@
 {
   "name": "restify-orm-framework",
-  "version": "0.2.0",
+  "version": "0.3.0-alpha",
   "description": "Utility functions for integrating waterline with restify; framework-style.",
   "main": "index.js",
   "dependencies": {
+    "@types/chai": "^4.0.2",
+    "@types/superagent": "^3.5.3",
+    "@types/supertest": "^2.0.2",
     "async": "^2.5.0",
     "bunyan": "^1.8.12",
+    "chai": "^4.1.1",
     "custom-restify-errors": "https://api.github.com/repos/SamuelMarks/custom-restify-errors-dist/tarball",
     "ioredis": "^3.1.2",
     "nodejs-utils": "https://api.github.com/repos/SamuelMarks/nodejs-utils-dist/tarball",
@@ -13,6 +17,9 @@
     "redis": "^2.8.0",
     "restify": "^5.1.0",
     "restify-plugins": "^1.6.0",
+    "sequelize": "^4.4.3",
+    "superagent": "^3.5.2",
+    "supertest": "^3.0.0",
     "typeorm": "0.1.0-alpha.34",
     "waterline": "https://api.github.com/repos/SamuelMarks/waterline/tarball/c91bdf46d400180ae7e800f684f8fb44f8fed9a5"
   },
