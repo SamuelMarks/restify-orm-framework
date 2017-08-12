@@ -1,7 +1,7 @@
 restify-orm-framework
 =====================
 
- Utility functions for integrating ORMs with restify; framework-style.
+Utility functions for integrating ORMs with restify; framework-style.
 
 If using TypeScript, install `typings` with:
 
@@ -11,8 +11,9 @@ Otherwise just use the [restify-orm-framework-dist](https://github.com/SamuelMar
 
 ## Supports
 
- - [Waterline](https://github.com/balderdashy/waterline)
+ - [Sequelize](https://github.com/sequelize/sequelize)
  - [TypeORM](https://github.com/typeorm/typeorm)
+ - [Waterline](https://github.com/balderdashy/waterline)
 
 ## Idea
 

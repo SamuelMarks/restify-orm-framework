@@ -1,7 +1,7 @@
 {
   "name": "restify-orm-framework",
-  "version": "0.3.0-gamma",
-  "description": "Utility functions for integrating waterline with restify; framework-style.",
+  "version": "0.3.0",
+  "description": "Utility functions for integrating ORMs with restify; framework-style.",
   "main": "index.js",
   "dependencies": {
     "@types/chai": "^4.0.3",

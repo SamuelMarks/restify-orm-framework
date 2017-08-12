@@ -1,16 +1,17 @@
 import * as bunyan from 'bunyan';
 import * as restify from 'restify';
-import { ConfigOptions, Connection, Query, WLError } from 'waterline';
-import { Redis, RedisOptions } from 'ioredis';
-import { Connection as TypeOrmConnection, ConnectionOptions } from 'typeorm';
+import * as redis from 'ioredis';
 import * as sequelize from 'sequelize';
+import * as typeorm from 'typeorm';
+import * as waterline from 'waterline';
 
-export type DbInitCb = (err: Error, datastores: Connection[], collections: Query[], finale: () => void) => void;
+export type DbInitCb = (err: Error, datastores: waterline.Connection[], collections: waterline.Query[],
+                        finale: () => void) => void;
 
 export interface IOrmsIn {
     redis?: {
         skip: boolean;
-        config?: RedisOptions | string;
+        config?: redis.RedisOptions | string;
     };
     sequelize?: {
         skip: boolean;
@@ -19,27 +20,28 @@ export interface IOrmsIn {
     };
     typeorm?: {
         skip: boolean;
-        config?: ConnectionOptions;
+        config?: typeorm.ConnectionOptions;
     };
     waterline?: {
         skip: boolean;
-        config?: ConfigOptions;
+        config?: waterline.ConfigOptions;
     };
 }
 
 export interface IOrmsOut {
     redis?: {
-        connection: Redis
+        connection: redis.Redis
     };
     sequelize?: {
-        connection: sequelize.Sequelize
+        connection: sequelize.Sequelize,
+        entities?: Map<string, sequelize.Model>
     };
     typeorm?: {
-        connection: TypeOrmConnection
+        connection: typeorm.Connection
     };
     waterline?: {
-        connection: Connection[],
-        collections?: Query[]
+        connection: waterline.Connection[],
+        collections?: waterline.Query[]
     };
 }
 
@@ -69,13 +71,14 @@ export interface IStrapFramework {
                 finale: () => void, next: DbInitCb) => void;*/
 
     // E.g.: for testing:
-    callback?: (err: Error | WLError, app?: restify.Server, orms_out?: IOrmsOut) => void;
+    callback?: (err: Error | waterline.WLError, app?: restify.Server, orms_out?: IOrmsOut) => void;
 }
 
-export declare const tearDownRedisConnection: (connection: Redis, done: (error?: any) => any) => void;
-export declare const tearDownTypeOrmConnection: (connection: TypeOrmConnection, done: (error?: any) => any) => void;
-export declare const tearDownWaterlineConnection: (connections: Connection[], done: (error?: any) => any) => void;
+export declare const tearDownRedisConnection: (connection: redis.Redis, done: (error?: any) => any) => any;
+export declare const tearDownSequelizeConnection: (connection: sequelize.Sequelize, done: (error?: any) => any) => any;
+export declare const tearDownTypeOrmConnection: (connection: typeorm.Connection, done: (error?: any) => any) => any;
+export declare const tearDownWaterlineConnection: (connections: waterline.Connection[],
+                                                   done: (error?: any) => any) => any;
 export declare const tearDownConnections: (orms: IOrmsOut, done: (error?: any) => any) => void;
-
 export declare const strapFramework: (kwargs: IStrapFramework) => void;
 export declare const add_to_body_mw: (...updates: Array<[string, string]>) => restify.RequestHandler;
