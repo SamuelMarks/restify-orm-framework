@@ -30,7 +30,8 @@
     "@types/node": "^8.0.20",
     "@types/redis": "^2.6.0",
     "@types/restify": "^5.0.1",
-    "@types/restify-plugins": "^1.5.7"
+    "@types/restify-plugins": "^1.5.7",
+    "@types/sequelize": "^4.0.68"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

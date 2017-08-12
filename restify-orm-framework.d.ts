@@ -34,7 +34,7 @@ export interface IOrmsOut {
     };
     sequelize?: {
         connection: sequelize.Sequelize,
-        entities?: Map<string, sequelize.Model>
+        entities?: Map<string, sequelize.Instance<{}> & sequelize.Model<{}, {}>>
     };
     typeorm?: {
         connection: typeorm.Connection

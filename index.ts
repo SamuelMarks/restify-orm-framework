@@ -2,8 +2,9 @@ import 'reflect-metadata';
 
 import * as Logger from 'bunyan';
 import * as restify from 'restify';
-import * as redis from 'ioredis';
+import * as Redis from 'ioredis';
 import * as sequelize from 'sequelize';
+import { Sequelize } from 'sequelize';
 import * as typeorm from 'typeorm';
 import * as Waterline from 'waterline';
 
@@ -54,11 +55,11 @@ const handleStartApp = (skip_start_app: boolean,
                 return callback(null, app, orms_out);
         });
 
-const redisHandler = (orm: {skip: boolean, config?: redis.RedisOptions | string},
+const redisHandler = (orm: {skip: boolean, config?: Redis.RedisOptions | string},
                       logger: Logger, callback: (err, ...args) => void) => {
     if (orm.skip) return callback(void 0);
 
-    const cursor = new redis(orm.config as redis.RedisOptions);
+    const cursor = new Redis(orm.config as Redis.RedisOptions);
     cursor.on('error', err => {
         logger.error(`Redis::error event - ${cursor['options']['host']}:${cursor['options']['port']} - ${err}`);
         logger.error(err);
@@ -75,9 +76,9 @@ const sequelizeHandler = (orm: {skip: boolean, uri?: string, config?: sequelize.
     if (orm.skip) return callback(void 0);
 
     logger.info('Sequelize initialising with:\t', Array.from(orm.map.keys()), ';');
-    const sequelize_obj = new sequelize.Sequelize(orm.uri, orm.config);
+    const sequelize_obj: sequelize.Sequelize = new sequelize['Sequelize'](orm.uri, orm.config);
 
-    const entities = new Map<string, sequelize.Model>();
+    const entities = new Map<string, sequelize.Instance<{}> & sequelize.Model<{}, {}>>();
     for (const [entity, program] of orm.map)
         entities.set(entity, program(sequelize_obj));
     sequelize_obj
@@ -125,14 +126,14 @@ const waterlineHandler = (orm: {skip: boolean, config?: Waterline.ConfigOptions,
     });
 };
 
-export const tearDownRedisConnection = (connection: redis.Redis, done: (error?: any) => any) =>
+export const tearDownRedisConnection = (connection: Redis.Redis, done: (error?: any) => any) =>
     connection == null ? done(void 0) : done(connection.disconnect());
 
 export const tearDownSequelizeConnection = (connection: sequelize.Sequelize, done: (error?: any) => any) =>
     connection == null ? done(void 0) : done(connection.close());
 
 export const tearDownTypeOrmConnection = (connection: typeorm.Connection, done: (error?: any) => any) =>
-    connection != null && connection.isConnected ? connection.close().then(_ => done()).catch(done) : done();
+    connection == null || !connection.isConnected ? done(void 0) : connection.close().then(_ => done()).catch(done);
 
 export const tearDownWaterlineConnection = (connections: Waterline.Connection[], done: (error?: any) => any) =>
     connections ? parallel(Object.keys(connections).map(
@@ -202,7 +203,7 @@ export const strapFramework = (kwargs: IStrapFramework) => {
 
     const do_models: boolean = Object
         .keys(kwargs.orms_in)
-        .filter(orm => orm !== 'redis')
+        .filter(orm => orm !== 'Redis')
         .some(orm => kwargs.orms_in[orm].skip === false);
 
     if (!(kwargs.models_and_routes instanceof Map))
