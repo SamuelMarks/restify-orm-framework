@@ -1,17 +1,18 @@
+import * as restify from 'restify';
+import * as Waterline from 'waterline';
+import { Collection, ConfigOptions, Connection, waterline, WLError } from 'waterline';
+import * as sequelize from 'sequelize';
+import * as Logger from 'bunyan';
+import { createLogger } from 'bunyan';
+import * as Redis from 'ioredis';
+
 import { dirname } from 'path';
 import { parallel } from 'async';
-import * as restify from 'restify';
 import { auditLogger, bodyParser, queryParser } from 'restify-plugins';
-import * as Waterline from 'waterline';
-import { Collection, Connection, waterline, WLError } from 'waterline';
-import { createLogger } from 'bunyan';
 import { WaterlineError } from 'custom-restify-errors';
-import * as Redis from 'ioredis';
-import { RedisOptions } from 'ioredis';
 import { IOrmsOut, IStrapFramework } from 'restify-orm-framework';
 import { model_route_to_map } from 'nodejs-utils';
-import * as sequelize from 'sequelize';
-import { Connection as TypeOrmConnection, createConnection } from 'typeorm';
+import { Connection as TypeOrmConnection, ConnectionOptions, createConnection } from 'typeorm';
 import 'reflect-metadata';
 
 const populateModels = (program: any,
@@ -48,59 +49,76 @@ const handleStartApp = (kwargs: IStrapFramework, app: restify.Server, orms_out: 
                 return kwargs.callback(null, app, orms_out);
         });
 
-const waterlineHandler = (kwargs: IStrapFramework,
-                          app: restify.Server,
-                          waterline_set: Set<string>,
-                          callback: (err, ...args) => void) => {
-    if (kwargs.skip_waterline) return callback(void 0);
+const redisHandler = (orm: {skip: boolean, config?: Redis.RedisOptions | string},
+                      logger: Logger, callback: (err, ...args) => void) => {
+    if (orm.skip) return callback(void 0);
 
-    const waterline_obj: waterline = new Waterline();
-    // Create/init database models and populates exported `waterline_collections`
-    Array.from(waterline_set.values()).forEach(e => waterline_obj.loadCollection(Collection.extend(e)));
-    waterline_obj.initialize(kwargs.waterline_config, (err, ontology) => {
-        if (err != null)
-            return callback(err);
-        else if (ontology == null || ontology.connections == null || ontology.collections == null
-            || ontology.connections.length === 0 || ontology.collections.length === 0) {
-            kwargs.logger.error('waterline_obj.initialize::ontology =', ontology, ';');
-            return callback(new TypeError('Expected ontology with connections & waterline_collections'));
-        }
-
-        // Tease out fully initialised models.
-        kwargs.waterline_collections = ontology.collections as Waterline.Query[];
-        kwargs.logger.info('Waterline initialised with:\t', Object.keys(kwargs.waterline_collections), ';');
-
-        kwargs._cache['waterline_collections'] = kwargs.waterline_collections; // pass by reference
-
-        return callback(null, { connection: ontology.connections, collections: kwargs.waterline_collections });
+    const cursor = new Redis(orm.config as Redis.RedisOptions);
+    cursor.on('error', err => {
+        logger.error(`Redis::error event - ${cursor['host']}:${cursor['port']}s- ${err}`);
+        logger.error(err);
+        return callback(err); // TODO: Check if `callback` has been called
+    });
+    cursor.on('connect', () => {
+        logger.info(`Redis::connect event - ${cursor['host']}:${cursor['port']}s`);
+        return callback(void 0, { connection: cursor });
     });
 };
 
-const typeormHandler = (kwargs: IStrapFramework, typeorm: Map<string, any>, callback: (err, ...args) => void) => {
-    if (kwargs.skip_typeorm) return callback(void 0);
-    kwargs.logger.info('TypeORM initialising with:\t', Array.from(typeorm.keys()), ';');
-    try {
+const sequelizeHandler = (orm: {skip: boolean, uri?: string, config?: sequelize.Options, map: Map<string, any>},
+                          logger: Logger, callback: (err, ...args) => void) => {
+    if (orm.skip) return callback(void 0);
+
+    logger.info('Sequelize initialising with:\t', Array.from(orm.map.keys()), ';');
+    const sequelize_obj = new sequelize.Sequelize(orm.uri, orm.config);
+    Array.from(orm.map.values()).forEach(e => e(sequelize_obj));
+    return callback(void 0, { connection: sequelize_obj });
+};
+
+const typeormHandler = (orm: {skip: boolean, uri?: string, config?: ConnectionOptions, map: Map<string, any>},
+                        logger: Logger, callback: (err, ...args) => void) => {
+    if (orm.skip) return callback(void 0);
+
+    logger.info('TypeORM initialising with:\t', Array.from(orm.map.keys()), ';');
+    try { // TODO: `uri` handling
         return createConnection(Object.assign({
-                entities: Array.from(typeorm.values())
-            }, kwargs.typeorm_config
+                entities: Array.from(orm.map.values())
+            }, orm.config
         )).then(connection => callback(null, { connection })).catch(callback);
     } catch (e) {
         return callback(e);
     }
 };
 
-const sequelizeHandler = (kwargs: IStrapFramework,
-                          app: restify.Server,
-                          sequelize_map: Map<string, any>,
-                          callback: (err, ...args) => void) => {
-    if (kwargs.skip_sequelize) return callback(void 0);
-    kwargs.logger.info('Sequelize initialising with:\t', Array.from(sequelize_map.keys()), ';');
-    const sequelize_obj = new sequelize.Sequelize(kwargs.sequelize_config as any);
-    Array.from(sequelize_map.values()).forEach(e => e(sequelize_obj));
-    return callback(void 0, { connection: sequelize_obj });
+const waterlineHandler = (orm: {skip: boolean, config?: ConfigOptions, set: Set<string>},
+                          logger: Logger, callback: (err, ...args) => void) => {
+    if (orm.skip) return callback(void 0);
+
+    const waterline_obj: waterline = new Waterline();
+    // Create/init database models and populates exported `waterline_collections`
+    Array.from(orm.set.values()).forEach(e => waterline_obj.loadCollection(Collection.extend(e)));
+    waterline_obj.initialize(orm.config, (err, ontology) => {
+        if (err != null)
+            return callback(err);
+        else if (ontology == null || ontology.connections == null || ontology.collections == null
+            || ontology.connections.length === 0 || ontology.collections.length === 0) {
+            logger.error('waterline_obj.initialize::ontology =', ontology, ';');
+            return callback(new TypeError('Expected ontology with connections & waterline_collections'));
+        }
+
+        // Tease out fully initialised models.
+        logger.info('Waterline initialised with:\t', Object.keys(ontology.collections), ';');
+        return callback(null, { connection: ontology.connections, collections: ontology.collections });
+    });
 };
 
-export const tearDownWaterlineConnections = (connections: Connection[], done: (error?: any) => any) =>
+export const tearDownRedisConnection = (connection: Redis.Redis, done: (error?: any) => any) =>
+    connection == null ? done(void 0) : done(connection.disconnect());
+
+export const tearDownTypeOrmConnection = (connection: TypeOrmConnection, done: (error?: any) => any) =>
+    connection != null && connection.isConnected ? connection.close().then(_ => done()).catch(done) : done();
+
+export const tearDownWaterlineConnection = (connections: Connection[], done: (error?: any) => any) =>
     connections ? parallel(Object.keys(connections).map(
         connection => connections[connection]._adapter.teardown
     ), () => {
@@ -111,8 +129,12 @@ export const tearDownWaterlineConnections = (connections: Connection[], done: (e
         return done();
     }) : done();
 
-export const tearDownTypeOrmConnection = (connection: TypeOrmConnection, done: (error?: any) => any) =>
-    connection != null && connection.isConnected ? connection.close().then(_ => done()).catch(done) : done();
+export const tearDownConnections = (orms: IOrmsOut, done: (error?: any) => any) =>
+    parallel({
+        redis: cb => tearDownRedisConnection((orms.redis || {connection: undefined}).connection, cb),
+        typeorm: cb => tearDownTypeOrmConnection((orms.typeorm || {connection: undefined}).connection, cb),
+        waterline: cb => tearDownWaterlineConnection((orms.waterline || {connection: undefined}).connection, cb)
+    }, done);
 
 export const strapFramework = (kwargs: IStrapFramework) => {
     if (kwargs.root == null) kwargs.root = '/api';
@@ -121,12 +143,12 @@ export const strapFramework = (kwargs: IStrapFramework) => {
     if (kwargs.skip_start_app == null) kwargs.skip_start_app = false;
     else if (kwargs.listen_port == null) /* tslint:disable:no-bitwise */
         kwargs.listen_port = typeof process.env['PORT'] === 'undefined' ? 3000 : ~~process.env['PORT'];
-    if (kwargs.skip_sequelize == null) kwargs.skip_sequelize = true;
-    if (kwargs.skip_typeorm == null) kwargs.skip_typeorm = true;
-    if (kwargs.skip_waterline == null) kwargs.skip_waterline = true;
-    if (kwargs.skip_redis == null) kwargs.skip_redis = true;
-    else if (kwargs.redis_config == null)
-        kwargs.redis_config = process.env['REDIS_URL'] == null ? { port: 6379 } : process.env['REDIS_URL'];
+
+    Object.keys(kwargs.orms_in).map(orm => {
+        if (kwargs.orms_in[orm].skip == null) kwargs.orms_in[orm].skip = true;
+    });
+    if (kwargs.orms_in.redis != null && !kwargs.orms_in.redis.skip && kwargs.orms_in.redis.config == null)
+        kwargs.orms_in.redis.config = process.env['REDIS_URL'] == null ? { port: 6379 } : process.env['REDIS_URL'];
 
     // Init server obj
     const app = restify.createServer(Object.assign({ name: kwargs.app_name }, kwargs.createServerArgs || {}));
@@ -145,7 +167,7 @@ export const strapFramework = (kwargs: IStrapFramework) => {
                 name: 'audit',
                 stream: process.stdout
             })
-        }) as any);
+        }));
 
     if (!kwargs.skip_app_version_routes)
         ['/', '/version', '/api', '/api/version'].map(route_path => app.get(route_path,
@@ -155,18 +177,22 @@ export const strapFramework = (kwargs: IStrapFramework) => {
             }
         ));
 
-    // models_and_routes['contact'] && populateModels('contact')('Contact');
     const routes = new Set<string>();
     const norm = new Set<string>();
     const waterline_set = new Set<any /*program*/>();
     const typeorm_map = new Map<string, any /*program*/>();
     const sequelize_map = new Map<string, any /*program*/>();
 
+    const do_models: boolean = Object
+        .keys(kwargs.orms_in)
+        .filter(orm => orm !== 'redis')
+        .some(orm => kwargs.orms_in[orm].skip === true);
+
     if (!(kwargs.models_and_routes instanceof Map))
         kwargs.models_and_routes = model_route_to_map(kwargs.models_and_routes);
     for (const [fname, program] of kwargs.models_and_routes as Map<string, any>)
         if (program != null)
-            if /* Merge models */ (fname.indexOf('model') > -1 && (!kwargs.skip_waterline || !kwargs.skip_typeorm))
+            if /* Merge models */ (fname.indexOf('model') > -1 && do_models)
                 populateModels(
                     program, kwargs.omit_models || ['AccessToken'], norm,
                     waterline_set, typeorm_map, sequelize_map
@@ -181,19 +207,15 @@ export const strapFramework = (kwargs: IStrapFramework) => {
     kwargs.logger.info('Restify registered routes:\t', Array.from(routes.keys()), ';');
     kwargs.logger.warn('Failed registering models:\t', Array.from(norm.keys()), ';');
 
-    if (!kwargs.skip_redis) {
-        kwargs.redis_cursors.redis = new Redis(kwargs.redis_config as any as RedisOptions);
-        kwargs.redis_cursors.redis.on('error', err => {
-            kwargs.logger.error(`Redis::error event -
-            ${kwargs.redis_cursors.redis['host']}:${kwargs.redis_cursors.redis['port']}s- ${err}`);
-            kwargs.logger.error(err);
-        });
-    }
-
     parallel({
-        sequelize: cb => sequelizeHandler(kwargs, app, sequelize_map, cb),
-        typeorm: cb => typeormHandler(kwargs, typeorm_map, cb),
-        waterline: cb => waterlineHandler(kwargs, app, waterline_set, cb),
+        redis: cb => kwargs.orms_in.redis == null ? cb(void 0) :
+            redisHandler(kwargs.orms_in.redis, kwargs.logger, cb),
+        sequelize: cb => kwargs.orms_in.sequelize == null ? cb(void 0) :
+            sequelizeHandler(Object.assign(kwargs.orms_in.sequelize, { map: sequelize_map }), kwargs.logger, cb),
+        typeorm: cb => kwargs.orms_in.typeorm == null ? cb(void 0) :
+            typeormHandler(Object.assign(kwargs.orms_in.typeorm, { map: typeorm_map }), kwargs.logger, cb),
+        waterline: cb => kwargs.orms_in.waterline == null ? cb(void 0) :
+            waterlineHandler(Object.assign(kwargs.orms_in.waterline, { set: waterline_set }), kwargs.logger, cb),
     }, (err: Error, orms_out: IOrmsOut) => {
         if (err != null) {
             if (kwargs.callback) return kwargs.callback(err);
