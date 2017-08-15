@@ -11,13 +11,13 @@
     "bunyan": "^1.8.12",
     "chai": "^4.1.1",
     "custom-restify-errors": "https://api.github.com/repos/SamuelMarks/custom-restify-errors-dist/tarball",
-    "ioredis": "^3.1.2",
+    "ioredis": "^3.1.4",
     "nodejs-utils": "https://api.github.com/repos/SamuelMarks/nodejs-utils-dist/tarball",
-    "pg": "^7.1.0",
+    "pg": "^7.1.2",
     "redis": "^2.8.0",
     "restify": "^5.1.0",
     "restify-plugins": "^1.6.0",
-    "sequelize": "^4.4.3",
+    "sequelize": "^4.5.0",
     "superagent": "^3.5.2",
     "supertest": "^3.0.0",
     "typeorm": "0.1.0-alpha.34",
@@ -27,11 +27,11 @@
     "@types/async": "^2.0.40",
     "@types/bunyan": "1.8.1",
     "@types/ioredis": "0.0.24",
-    "@types/node": "^8.0.20",
+    "@types/node": "^8.0.22",
     "@types/redis": "^2.6.0",
     "@types/restify": "^5.0.1",
     "@types/restify-plugins": "^1.5.7",
-    "@types/sequelize": "^4.0.68"
+    "@types/sequelize": "^4.0.69"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
