@@ -1,6 +1,6 @@
 {
   "name": "restify-orm-framework",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Utility functions for integrating ORMs with restify; framework-style.",
   "main": "index.js",
   "dependencies": {

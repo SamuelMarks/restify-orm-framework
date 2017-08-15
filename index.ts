@@ -9,7 +9,7 @@ import * as typeorm from 'typeorm';
 import * as Waterline from 'waterline';
 
 import { dirname } from 'path';
-import { parallel } from 'async';
+import { map, parallel } from 'async';
 import { auditLogger, bodyParser, queryParser } from 'restify-plugins';
 import { WaterlineError } from 'custom-restify-errors';
 import { IOrmsOut, IStrapFramework } from 'restify-orm-framework';
@@ -81,9 +81,18 @@ const sequelizeHandler = (orm: {skip: boolean, uri?: string, config?: sequelize.
     const entities = new Map<string, sequelize.Instance<{}> & sequelize.Model<{}, {}>>();
     for (const [entity, program] of orm.map)
         entities.set(entity, program(sequelize_obj));
+
     sequelize_obj
         .authenticate()
-        .then(() => callback(void 0, { connection: sequelize_obj, entities }))
+        .then(() => map(
+            Array.from(entities.keys()),
+            (entity_name, cb) =>
+                sequelize_obj
+                    .sync(entities.get(entity_name) as any)
+                    .then(_ => cb(void 0))
+                    .catch(cb),
+            err => callback(err, { connection: sequelize_obj, entities })
+        ))
         .catch(callback);
 };
 
