@@ -80,7 +80,7 @@ const sequelizeHandler = (orm: {skip: boolean, uri?: string, config?: sequelize.
 
     const entities = new Map<string, sequelize.Instance<{}> & sequelize.Model<{}, {}>>();
     for (const [entity, program] of orm.map)
-        entities.set(entity, program(sequelize_obj));
+        entities.set(entity, program(sequelize_obj, orm.map));
 
     sequelize_obj
         .authenticate()
